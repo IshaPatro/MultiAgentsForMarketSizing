@@ -7,7 +7,9 @@ from pydantic import BaseModel
 
 from debate.config import ModelsConfig, TierConfig
 from debate.llm.client import compute_cost
-from debate.state import Usage, VCQuestion
+import re
+
+from debate.state import ClaimExtraction, ClaimVerdict, ExtractedClaim, Usage, VCQuestion, VerdictBatch
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -16,10 +18,20 @@ _EXECS = ("ceo", "cfo", "cto")
 
 
 def default_responder(role: str, system: str, user: str, schema: type[BaseModel], call_no: int) -> BaseModel:
+    if schema is ClaimExtraction:
+        return ClaimExtraction(claims=[ExtractedClaim(text="Placeholder checkable claim.", type="fact")],
+                               relies_on_later_knowledge=False, later_knowledge_reason="")
+    if schema is VerdictBatch:
+        refs = dict.fromkeys(re.findall(r"^(C\d+) ", user, re.M))
+        return VerdictBatch(verdicts=[ClaimVerdict(ref=r, verdict="supported", confidence=0.9, evidence_ids=[],
+                                                   note="dry-run") for r in refs])
     point = f"[dry-run {role}] Placeholder argument number {call_no} that stays well under the word limit."
     if schema is VCQuestion:
         return VCQuestion(point=point, addressed_to=_EXECS[call_no % len(_EXECS)])
-    return schema(point=point)
+    # Exercise the real citation path when an offline run has RAG enabled.
+    evidence = user.split("EVIDENCE:\n", 1)[-1] if "EVIDENCE:\n" in user else ""
+    cited = re.search(r"^\[([A-Za-z0-9_-]+)\]", evidence, re.M)
+    return schema(point=point, evidence_ids=[cited.group(1)] if cited else [])
 
 
 class ScriptedClient:

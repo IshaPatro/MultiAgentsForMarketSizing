@@ -17,6 +17,7 @@ class EraContext(BaseModel, frozen=True):
     name: str
     cutoff_date: date
     description: str = ""
+    forbidden_terms: list[str] = Field(default_factory=list)
 
     @property
     def label(self) -> str:
@@ -44,6 +45,10 @@ class Limits(BaseModel):
     max_brevity_retries: int = 1
     max_cost_usd_per_run: float = 1.0
     context_turns: int = 6
+    retrieval_k: int = 4
+    claim_evidence_k: int = 3
+    max_regenerations: int = 2
+    escalate_below: float = 0.75
 
 
 class ModelsConfig(BaseModel):
@@ -55,7 +60,7 @@ class ModelsConfig(BaseModel):
 class CompanyConfig(BaseModel):
     company_id: str
     name: str
-    briefs: dict[str, str]
+    summaries: dict[str, str]
 
 
 def load_env(path: Path = ROOT / ".env") -> None:
@@ -84,6 +89,49 @@ def load_era(name: str, root: Path = ROOT) -> EraContext:
     if name not in eras:
         raise KeyError(f"unknown era {name!r}; known: {', '.join(eras)}")
     return EraContext(name=name, **eras[name])
+
+
+class CorpusSegment(BaseModel):
+    pages: tuple[int, int]
+    doc_type: str = "case"
+    skip: bool = False
+    reason: str = ""
+
+
+class CorpusSource(BaseModel):
+    id: str
+    path: str
+    title: str
+    segments: list[CorpusSegment]
+
+
+class ApprovedDate(BaseModel):
+    """A human-reviewed date, pinned to the exact text that was reviewed.
+
+    Chunk ids are positional (page + counter), so after a chunking change the same id can hold different text.
+    The fingerprint makes such an approval stale instead of silently dating unreviewed text.
+    """
+
+    as_of: date
+    text_sha256: str  # first 12 hex chars of sha256(chunk text); see debate.rag.ingest.text_fingerprint
+
+
+class CorpusManifest(BaseModel):
+    company_id: str
+    default_as_of: date
+    sources: list[CorpusSource]
+    approved_dates: dict[str, ApprovedDate] = Field(default_factory=dict)
+
+
+def load_eras(root: Path = ROOT) -> dict[str, EraContext]:
+    return {name: EraContext(name=name, **v) for name, v in _yaml(root / "configs" / "eras.yaml").items()}
+
+
+def load_corpus(company_id: str, root: Path = ROOT) -> CorpusManifest:
+    path = root / "configs" / "corpus" / f"{company_id}.yaml"
+    if not path.exists():
+        raise KeyError(f"no corpus manifest at {path}")
+    return CorpusManifest(**_yaml(path))
 
 
 def load_company(company_id: str, root: Path = ROOT) -> CompanyConfig:

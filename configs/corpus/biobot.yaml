@@ -1,0 +1,23 @@
+# What to ingest and how to date it. Every chunk inherits default_as_of unless the date check
+# finds a mention of a later year (see src/debate/rag/dating.py).
+company_id: biobot
+default_as_of: 2017-09-30       # the case's decision point (MIT delta v admission, summer 2017)
+# Reviewed against the local licensed case: the 2022 figures are forecasts quoted
+# in the 2017 narrative; FY2018 is a Boston budget for the year beginning July 2017.
+# Each approval is pinned to the reviewed text (sha256 prefix, printed in data/chunk_dates_review.csv); if
+# chunking changes the text under an id, the approval goes stale and the chunk returns to review.
+approved_dates:
+  biobot_hbs_case_p5_c2: {as_of: 2017-09-30, text_sha256: 786addec62af}
+  biobot_hbs_case_p8_c2: {as_of: 2017-09-30, text_sha256: 4a7729f99242}
+  biobot_hbs_case_p8_c3: {as_of: 2017-09-30, text_sha256: 8f4cb7a70dbc}
+  biobot_hbs_case_p24_c1: {as_of: 2017-09-30, text_sha256: 25f44e5eba98}
+sources:
+  - id: hbs_case
+    path: Biobot/01.BiobotAnalytics.pdf
+    title: 'HBS case 821-045, "Biobot Analytics"'
+    segments:
+      - {pages: [1, 13], doc_type: case}
+      - {pages: [14, 24], doc_type: exhibit}      # one chunk per page; tables are never split
+      - pages: [25, 27]
+        skip: true
+        reason: endnote citation lists; they cite sources published 2018-2020, add no checkable facts

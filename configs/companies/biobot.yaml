@@ -1,23 +1,8 @@
 company_id: biobot
 name: Biobot Analytics
-# Phase 1 has no RAG, so each era gets a short hand-written brief seeded from the HBS case
-# (Biobot/01.BiobotAnalytics.pdf). Phase 2 replaces this with retrieved, date-tagged chunks.
-# A brief must only contain facts knowable at that era's cutoff date.
-briefs:
-  pre_covid: |
-    Company: Biobot Analytics, an MIT spin-out founded by Newsha Ghaeli (architect, MIT Senseable City Lab)
-    and Mariana Matus (computational biologist, PhD, MIT Alm Lab). Pre-revenue; no customers yet.
-    Origin: MIT "Underworlds" project, which sampled sewage near its source (manholes) with an
-    off-the-shelf-component pump robot to extract population-health signals (e.g. drug use, microbiome).
-    Plan: sell wastewater-based drug-consumption data to cities, starting with opioids.
-    Market: >59,000 US overdose deaths in 2016; HHS called opioids a national epidemic in 2017;
-    ~2M people with opioid use disorder. Four beachhead cities (Boston, San Francisco, New York City,
-    Washington DC) have ~$110B combined municipal budgets, of which the founders estimate ~20% goes to
-    public health. 71 US cities over 500k people; ~870 potential cities incl. smaller US and Canadian ones.
-    Boston: ~650k residents, 50,427 manholes.
-    Wider context: global water and wastewater treatment market ~$89B (2015). Australia's national
-    wastewater drug-monitoring program (2016) is an existing government precedent.
-    Risks raised by advisors: selling to slow, risk-averse city governments; unclear who pays for the data;
-    MIT's tech licensing office found no patentable IP (hardware is off-the-shelf, "just a pump");
-    no hardware cofounder; data-privacy concerns about sewage testing; founders are on temporary visas.
-    Trends in favor: urbanization, GovTech momentum, push toward data-driven public health.
+# One or two sentences of era-appropriate context for the system prompt. Everything else an agent
+# knows must come from retrieved, dated chunks. An era without a summary is refused.
+summaries:
+  pre_covid: >-
+    Biobot is a pre-revenue MIT spin-out planning to sell wastewater-based drug-consumption data
+    (starting with opioids) to city governments.

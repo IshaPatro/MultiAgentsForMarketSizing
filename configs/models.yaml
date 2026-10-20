@@ -5,6 +5,14 @@ tiers:
     model: claude-sonnet-5-5
     effort: low                 # 60-word replies do not need long deliberation
     max_tokens: 1024            # headroom for adaptive thinking + the JSON reply
+  fast:                         # System 1 slot: claim extraction, first-pass fact checks, date checks.
+    model: claude-haiku-5-5     # Placeholder for JEV until Phase 4 (ModelClient swap, no agent changes).
+    effort: low
+    max_tokens: 2048
+  check_hard:                   # escalation target for uncertain / "contradicted" verdicts
+    model: claude-sonnet-5-5
+    effort: medium
+    max_tokens: 2048
   decision:                     # final VC call (Phase 7)
     model: claude-opus-5-5
     effort: high
@@ -12,9 +20,15 @@ tiers:
 prices:
   claude-sonnet-5-5: {input: 2.00, output: 10.00, cache_read: 0.20, cache_write: 2.50}
   claude-opus-5-5:   {input: 4.00, output: 20.00, cache_read: 0.20, cache_write: 5.00}
+  # Haiku cache prices follow the standard multipliers (read 0.1x, 5-min write 1.25x input).
+  claude-haiku-5-5:  {input: 0.10, output: 0.50, cache_read: 0.01, cache_write: 0.125}
 limits:
   max_words_per_turn: 60
   max_rounds: 3
   max_brevity_retries: 1
   max_cost_usd_per_run: 1.00
   context_turns: 6            # verbatim turns shown to each agent (rolling summary arrives in Phase 4)
+  retrieval_k: 4              # chunks shown to each agent per turn
+  claim_evidence_k: 3         # chunks retrieved per claim during fact-checking
+  max_regenerations: 2        # re-asks after an anachronism block before the turn is withheld
+  escalate_below: 0.75        # first-pass verdict confidence under this goes to check_hard

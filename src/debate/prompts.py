@@ -21,15 +21,15 @@ def build_system(role: str, *, company: CompanyConfig, era: EraContext, max_word
     """Role prompt first, then the shared rules + briefing. Stable per (role, era) so it is cacheable."""
     if role not in ROLES:
         raise KeyError(f"unknown role {role!r}")
-    brief = company.briefs.get(era.name)
-    if brief is None:
+    summary = company.summaries.get(era.name)
+    if summary is None:
         raise KeyError(f"{company.company_id} has no briefing for era {era.name!r} yet")
     values = {
         "company_name": company.name,
         "cutoff_date": era.cutoff_date.isoformat(),
         "era_label": era.label,
         "max_words": max_words,
-        "brief": brief.strip(),
+        "summary": summary.strip(),
         "round_instruction": "",
         **extra,
     }

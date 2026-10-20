@@ -25,7 +25,7 @@ def test_over_long_reply_triggers_one_rewrite_and_is_accepted(cfg):
             return Statement(point="Short and sharp.")
         return default_responder(role, system, user, schema, n)
 
-    state, _, _, _ = make_run(cfg, responder, rounds=1)
+    state, _, _ = make_run(cfg, responder, rounds=1)
     ceo = next(t for t in state["turns"] if t["speaker"] == "ceo")
     assert ceo["content"] == "Short and sharp."
     assert ceo["retries"] == 1 and ceo["trimmed"] is False
@@ -38,12 +38,12 @@ def test_still_too_long_after_retry_is_hard_trimmed(cfg):
             return Statement(point=LONG)
         return default_responder(role, system, user, schema, n)
 
-    state, _, _, _ = make_run(cfg, responder, rounds=1)
+    state, _, _ = make_run(cfg, responder, rounds=1)
     devil = next(t for t in state["turns"] if t["speaker"] == "devil")
     assert word_count(devil["content"]) <= 60
     assert devil["trimmed"] is True and devil["retries"] == 1
 
 
 def test_all_turns_respect_the_limit_end_to_end(cfg):
-    state, _, _, _ = make_run(cfg, rounds=3)
+    state, _, _ = make_run(cfg, rounds=3)
     assert all(word_count(t["content"]) <= cfg.limits.max_words_per_turn for t in state["turns"])

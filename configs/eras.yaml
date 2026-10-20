@@ -1,0 +1,7 @@
+# The simulated "today" for each era. Everything an agent may know must be dated <= cutoff.
+pre_covid:
+  cutoff_date: 2017-12-31
+  description: Seed-stage bet; the HBS case is set in 2017.
+post_covid:
+  cutoff_date: 2021-12-31   # placeholder; confirm in Phase 6
+  description: After COVID made wastewater surveillance mainstream.

@@ -1,0 +1,63 @@
+# Retrieval evaluation set for the Biobot corpus: `python -m debate eval-retrieval`.
+# Each question lists the chunk ids that answer it (`expect`) and, optionally, answer phrases (`contains`).
+# A question is a hit at k if any expected id is in the top k, or a top-k chunk contains every phrase
+# (so the narrative paragraph that answers it also counts).
+# `kind` groups the scores: number (a figure), fact, exhibit (table lookup), source (provenance), assumption,
+# public (the dated public-source ledger).
+company_id: biobot
+questions:
+  # ---- figures an agent will cite in a market-size debate
+  - {kind: number, q: "How many Americans died from drug overdoses in 2016?", expect: [biobot_fact_overdose_deaths_2016]}
+  - {kind: number, q: "How large were the four beachhead cities' combined municipal budgets?", expect: [biobot_fact_beachhead_municipal_budgets]}
+  - {kind: number, q: "What share of city budgets goes to public health according to the founders?", expect: [biobot_fact_public_health_share_estimate, biobot_fact_beachhead_public_health_spend], contains: ["20% of which"]}
+  - {kind: number, q: "How many manholes does Boston have?", expect: [biobot_fact_boston_manholes, biobot_fact_residents_per_manhole], contains: ["50,427 manholes"]}
+  - {kind: number, q: "What is Boston's population?", expect: [biobot_fact_boston_residents]}
+  - {kind: number, q: "How many large US cities with more than 500000 people could buy the product?", expect: [biobot_fact_cities_over_500k], contains: ["71 relevant cities"]}
+  - {kind: number, q: "How many potential customer cities if smaller US and Canadian cities are included?", expect: [biobot_fact_cities_including_smaller]}
+  - {kind: number, q: "How big was the global water and wastewater treatment market in 2015?", expect: [biobot_fact_water_market_2015]}
+  - {kind: number, q: "What is the 2022 forecast for the water treatment industry?", expect: [biobot_fact_water_market_2022_forecast]}
+  - {kind: number, q: "What share of the water treatment market is municipal?", expect: [biobot_fact_municipal_share_of_water_market, biobot_fact_municipal_water_market_2015]}
+  - {kind: number, q: "How often would Biobot sample each manhole?", expect: [biobot_fact_sampling_cadence_monthly, biobot_fact_samples_per_year]}
+  - {kind: number, q: "How many people have an opioid use disorder?", expect: [biobot_fact_opioid_use_disorder]}
+  - {kind: number, q: "How much funding did the Underworlds project receive?", expect: [biobot_fact_underworlds_grant], contains: ["$4 million"]}
+  - {kind: number, q: "How many viruses did the team find in one sewage sample?", expect: [biobot_fact_viruses_identified]}
+  - {kind: number, q: "How large is the smart toilet market?", expect: [biobot_fact_smart_toilet_market]}
+  - {kind: number, q: "What share of the world's population lives in cities?", expect: [biobot_fact_urban_share_claim, biobot_assume_urban_share_un]}
+  # ---- exhibit lookups
+  - {kind: exhibit, q: "What did Boston budget for overdose prevention in FY2018?", expect: [biobot_ex7_risk_reduction_and_overdose_prevention, biobot_fact_boston_overdose_prevention_growth]}
+  - {kind: exhibit, q: "What was Boston's total public health services budget in FY2018?", expect: [biobot_ex7_total_public_health_services_expenditures, biobot_fact_boston_public_health_budget_fy18]}
+  - {kind: exhibit, q: "How much does Boston spend on emergency medical services?", expect: [biobot_ex7_emergency_medical_services]}
+  - {kind: exhibit, q: "What share of Boston's public health budget goes to recovery services?", expect: [biobot_fact_boston_recovery_share_fy18]}
+  - {kind: exhibit, q: "Who is the lead customer and end user among municipal governments?", expect: [biobot_ex5_municipal_governments]}
+  - {kind: exhibit, q: "Which hedge funds could buy wastewater data and what would they use it for?", expect: [biobot_ex5_hedge_funds], contains: ["Alpha Simplex"]}
+  - {kind: exhibit, q: "What competes with Biobot when selling to insurance providers?", expect: [biobot_ex5_insurance_providers]}
+  - {kind: exhibit, q: "How mature is the science for measuring prescription and illicit drugs in wastewater?", expect: [biobot_ex6_prescription_illicit_drugs], contains: [">10 years"]}
+  - {kind: exhibit, q: "Which public health application has the highest public interest?", expect: [biobot_ex6_prescription_illicit_drugs]}
+  # ---- qualitative facts
+  - {kind: fact, q: "Who are the founders and what are their backgrounds?", expect: [biobot_fact_founders_backgrounds]}
+  # 2017 (case): no patentable IP; 2023 (public ledger): an issued sampling patent. Either answers it.
+  - {kind: fact, q: "Does Biobot have patentable intellectual property?", expect: [biobot_public_technology_and_intellectual_03, biobot_fact_no_patentable_ip, biobot_fact_early_objections, biobot_fact_tlo_not_interested_in_procedures], contains: ["wasn't really IP"]}
+  - {kind: fact, q: "What were the sampling robots called?", expect: [biobot_fact_robot_mario, biobot_fact_robots_luigi], contains: ["Mario"]}
+  - {kind: fact, q: "Why might the founders have to leave the United States?", expect: [biobot_fact_visa_dependency], contains: ["visa"]}
+  - {kind: fact, q: "What did Carlo Ratti warn about selling to governments?", expect: [biobot_fact_ratti_who_pays], contains: ["who's going to pay for this data"]}
+  - {kind: fact, q: "Why did Eric Alm want them to stay at MIT?", expect: [biobot_fact_alm_stay_at_mit]}
+  - {kind: fact, q: "Which first use case did a mayor push the founders toward?", expect: [biobot_fact_mayor_opioids], contains: ["on my agenda is opioids"]}
+  - {kind: fact, q: "What startup ideas did Matus pursue before Biobot?", expect: [biobot_fact_matus_smart_toilet, biobot_fact_matus_microbiome_idea], contains: ["smart toilet"]}
+  - {kind: fact, q: "What did private sector prospects want before buying?", expect: [biobot_fact_private_buyers_wanted_data]}
+  - {kind: fact, q: "Which accelerator admitted Biobot in 2017?", expect: [biobot_fact_delta_v_admission]}
+  - {kind: fact, q: "Can competitors copy the idea without licensing anything from MIT?", expect: [biobot_fact_no_licensing_barrier_for_others]}
+  - {kind: fact, q: "What national wastewater drug monitoring program existed in Australia?", expect: [biobot_fact_australia_acic_program, biobot_fact_australia_acic_funding]}
+  # ---- provenance and assumptions
+  - {kind: source, q: "Where does the 59000 overdose deaths figure come from?", expect: [biobot_note_39, biobot_fact_overdose_deaths_2016]}
+  - {kind: source, q: "When did HHS declare the opioid crisis a public health emergency?", expect: [biobot_note_41, biobot_fact_hhs_opioid_epidemic]}
+  - {kind: assumption, q: "What price per sample does the bottom-up market size assume?", expect: [biobot_assume_price_per_sample, biobot_sizing_manhole_sampling]}
+  - {kind: assumption, q: "How is the bottom-up manhole sampling market size calculated?", expect: [biobot_sizing_manhole_sampling]}
+  # ---- public ledger (case_study/public_data.md): what happened after the case, dated
+  - {kind: public, q: "Did Biobot go through Y Combinator, and when?", expect: [biobot_public_check_of_the_02], contains: ["Y Combinator"]}
+  - {kind: public, q: "How many people did each Cary pilot sampling site represent?", expect: [biobot_public_history_and_operating_03, biobot_assume_people_per_catchment], contains: ["4,000"]}
+  - {kind: public, q: "What is the minimum price a municipality pays Biobot per year?", expect: [biobot_public_company_and_offering_05, biobot_public_business_and_market_02, biobot_assume_municipal_price_floor], contains: ["$15,000"]}
+  - {kind: public, q: "How much did Biobot raise in its Series A in 2021?", expect: [biobot_public_funding_and_investors_03], contains: ["$20 million"]}
+  - {kind: public, q: "When did Biobot launch its COVID-19 wastewater testing campaign?", expect: [biobot_public_history_and_operating_06, biobot_public_check_of_the_04]}
+  - {kind: public, q: "When did the Massachusetts MWRA stop testing with Biobot?", expect: [biobot_public_contracts_customers_and_06, biobot_public_public_measurements_and_03], contains: ["MWRA"]}
+  - {kind: public, q: "Which companies compete with Biobot in national wastewater surveillance today?", expect: [biobot_public_competitors_alternatives_and_01, biobot_public_competitors_alternatives_and_02, biobot_public_competitors_alternatives_and_03, biobot_public_competitors_alternatives_and_04, biobot_public_competitors_alternatives_and_05, biobot_public_competitors_alternatives_and_06]}
+  - {kind: public, q: "Does Biobot hold an issued patent on its sampling hardware?", expect: [biobot_public_technology_and_intellectual_03], contains: ["US11714030B2"]}

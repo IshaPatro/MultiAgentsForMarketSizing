@@ -1,4 +1,4 @@
-from conftest import FakeRetriever, chunk, make_run
+from conftest import needs_pg, FakeRetriever, chunk, make_run
 
 from debate.nodes.agents import BudgetExceeded
 from debate.state import VCQuestion
@@ -8,12 +8,24 @@ import pytest
 
 def test_three_rounds_give_nine_turns_in_order(cfg):
     state, _, _ = make_run(cfg, rounds=3)
+    assert "era" not in state["decision"]
+    assert set(state["decision"]["score_drivers"]) == {
+        "team", "market", "product", "traction", "moat", "timing", "business_model"}
     speakers = [t["speaker"] for t in state["turns"]]
-    assert len(speakers) == 9
+    # 9 debate turns + a moderator notice per VC question (2) + a VC-assistant verdict after every attack (3)
+    assert len(speakers) == 14
     assert speakers[0] == "vc" and speakers[1] == "ceo"          # opening asks the CEO for the pitch
-    assert speakers[2::3] == ["devil"] * 3                        # devil attacks after every answer
-    assert [t["seq"] for t in state["turns"]] == list(range(1, 10))
-    assert [t["round"] for t in state["turns"]] == [1, 1, 1, 2, 2, 2, 3, 3, 3]
+    debate = [s for s in speakers if s not in ("moderator", "assistant")]
+    assert debate[2::3] == ["devil"] * 3                          # devil attacks after every answer
+    assert speakers[:4] == ["vc", "ceo", "devil", "assistant"]    # the assistant checks each exchange
+    assert speakers[4:7] == ["vc", "moderator", speakers[6]] and speakers[7:9] == ["devil", "assistant"]
+    assert [t["seq"] for t in state["turns"]] == list(range(1, 15))
+    assert [t["round"] for t in state["turns"]] == [1] * 4 + [2] * 5 + [3] * 5
+    notice = state["turns"][5]
+    assert notice["content"] == "This question will be taken up by the CFO." and notice["addressed_to"] == "cfo"
+    assert state["turns"][6]["speaker"] == "cfo"                  # the answer comes from whoever the moderator named
+    verdicts = [t for t in state["turns"] if t["speaker"] == "assistant"]
+    assert all(v["content"] in ("Facts are correct.", "Facts are incorrect.") and v["addressed_to"] == "vc" for v in verdicts)
 
 
 def test_vc_question_is_routed_to_the_executive_it_names(cfg):
@@ -27,15 +39,6 @@ def test_vc_question_is_routed_to_the_executive_it_names(cfg):
     assert answers == ["ceo", "cfo", "cfo"]
     devil_targets = [t["addressed_to"] for t in state["turns"] if t["speaker"] == "devil"]
     assert devil_targets == ["ceo", "cfo", "cfo"]
-
-
-def test_each_agent_sees_the_simulated_date_and_only_its_era_brief(cfg):
-    _, llm, _ = make_run(cfg, rounds=1)
-    for call in llm.calls:
-        if call["role"] == "date_check":
-            continue
-        assert "2017-12-31" in call["system"]
-        assert "COVID" not in call["system"].upper().replace("PRE-COVID", "")
 
 
 def test_context_window_is_bounded(cfg):
@@ -59,27 +62,61 @@ def test_offline_graph_retrieves_and_records_real_citation_ids(cfg):
     assert any("[case_p11_c1]" in c["user"] for c in llm.calls if c["role"] == "ceo")
 
 
-def test_long_runs_do_not_hit_the_graph_recursion_limit(capsys):
-    from debate.cli import main
+def test_vc_can_cite_retrieved_premises(cfg):
+    def responder(role, system, user, schema, n):
+        if schema is VCQuestion:
+            return VCQuestion(point="Boston has 50,427 manholes; how will you sample them?",
+                              addressed_to="ceo", evidence_ids=["case_p11_c1"])
+        return default_responder(role, system, user, schema, n)
 
-    assert main(["run", "--dry-run", "--rounds", "16"]) == 0
-    assert "completed: 48 turns" in capsys.readouterr().out
+    state, _, _ = make_run(cfg, responder, rounds=1, retriever=FakeRetriever([chunk("case_p11_c1")]))
+    vc = state["turns"][0]
+    assert vc["evidence_ids"] == ["case_p11_c1"] and vc["invalid_citations"] == 0
 
 
-def test_a_crashing_run_is_recorded_as_error_not_left_running(monkeypatch):
+def _drop_threads(data_dir):
+    """CLI runs checkpoint to the real Postgres; remove this test's threads so runs do not pile up."""
+    import sqlite3
+
+    from debate.memory.setup import persistence
+
+    threads = [r[0] for r in sqlite3.connect(data_dir / "debate.sqlite").execute("SELECT thread_id FROM runs")]
+    with persistence() as (saver, _):
+        for thread_id in threads:
+            saver.delete_thread(thread_id)
+
+
+@needs_pg
+def test_long_runs_do_not_hit_the_graph_recursion_limit(tmp_path, monkeypatch, capsys):
+    import debate.cli as cli
+
+    monkeypatch.setattr(cli, "DATA", tmp_path)
+    try:
+        assert cli.main(["run", "--dry-run", "--rounds", "16"]) == 0
+        assert "completed: 79 turns" in capsys.readouterr().out
+    finally:
+        _drop_threads(tmp_path)
+
+
+@needs_pg
+def test_a_crashing_run_is_recorded_as_error_not_left_running(tmp_path, monkeypatch):
     import sqlite3
 
     import pytest
 
     import debate.cli as cli
-    from debate.rag.retriever import LeakError
+
+    monkeypatch.setattr(cli, "DATA", tmp_path)
+
+    class PlantedError(RuntimeError):
+        pass
 
     class Exploding:
         def invoke(self, *a, **k):
-            raise LeakError("planted")
+            raise PlantedError("planted")
 
-    monkeypatch.setattr(cli, "build_graph", lambda deps, saver: Exploding())
-    with pytest.raises(LeakError):
+    monkeypatch.setattr(cli, "build_graph", lambda deps, saver, **kwargs: Exploding())
+    with pytest.raises(PlantedError):
         cli.main(["run", "--dry-run", "--rounds", "1"])
     conn = sqlite3.connect(cli.DATA / "debate.sqlite")
     run_id, status = conn.execute("SELECT run_id, status FROM runs ORDER BY started_at DESC, rowid DESC LIMIT 1").fetchone()

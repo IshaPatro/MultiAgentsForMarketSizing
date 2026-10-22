@@ -9,6 +9,20 @@ from pydantic import BaseModel, Field
 Executive = Literal["ceo", "cfo", "cto"]
 
 
+AgendaTopic = Literal["market_size", "customers", "unit_economics", "technology_moat", "go_to_market", "risks"]
+
+
+class Estimate(BaseModel):
+    """One independent way of sizing something (e.g. a market), with its own maths and assumptions."""
+
+    method: str = Field(description="Short name, e.g. 'Beachhead budgets (top-down)'.")
+    calculation: str = Field(
+        description="Step by step with units, one 'expression = result' per step separated by ';', ending in "
+        "this estimate's result (e.g. '$110B x 20% = $22B; $22B x 4.6% = $1.0B; $1.0B x 50% = $506M')."
+    )
+    assumptions: list[str] = Field(default_factory=list, description="Up to 3 assumptions behind this estimate.")
+
+
 class Statement(BaseModel):
     """Structured reply for CEO / CFO / CTO / Devil's Advocate: exactly one point."""
 
@@ -17,13 +31,39 @@ class Statement(BaseModel):
         default_factory=list,
         description="Ids of the EVIDENCE chunks this point relies on (max 2). Empty if it is opinion or the evidence is silent.",
     )
+    calculation: str = Field(
+        default="",
+        description="If the point uses a number you derived, the arithmetic step by step with units, one "
+        "'expression = result' per step separated by ';' (e.g. '4 cities x $110B x 20% = $88B'). Empty if none.",
+    )
+    assumptions: list[str] = Field(
+        default_factory=list,
+        description="Up to 3 assumptions the point depends on that the evidence does not state "
+        "(e.g. 'a city pays $50k per year'). Empty if the point rests only on evidence.",
+    )
+    estimates: list[Estimate] = Field(
+        default_factory=list,
+        description="Only when asked to size a market or compare methods: up to 3 independent approaches, "
+        "each with its own maths and assumptions. Empty otherwise.",
+    )
 
 
 class VCQuestion(BaseModel):
     """Structured reply for the VC: one question and who should answer it."""
 
     point: str = Field(description="One sharp question, at most 60 words.")
-    addressed_to: Executive = Field(description="Which executive should answer.")
+    addressed_to: Executive = Field(description="Your suggestion for who should answer; a router makes the final call.")
+    topic: AgendaTopic | None = Field(default=None, description="The agenda topic this question opens.")
+    evidence_ids: list[str] = Field(default_factory=list,
+                                    description="Retrieved chunk IDs supporting any factual premise in the question.")
+
+
+class RouteChoice(BaseModel):
+    """Router reply: which executive takes the VC's question."""
+
+    executive: Executive
+    reason: str = Field(default="", description="At most 12 words.")
+    confidence: float | None = Field(default=None, description="0 to 1, when the router can tell.")
 
 
 ClaimType = Literal["fact", "number", "forecast", "opinion"]
@@ -42,11 +82,6 @@ class ExtractedClaim(BaseModel):
 
 class ClaimExtraction(BaseModel):
     claims: list[ExtractedClaim]
-    relies_on_later_knowledge: bool = Field(
-        description="True only if the statement states or presupposes events/facts after the cutoff date. "
-        "Forecasts and plans about the future are allowed."
-    )
-    later_knowledge_reason: str = Field(description="Empty string if false; otherwise one short sentence.")
 
 
 class ClaimVerdict(BaseModel):
@@ -59,6 +94,43 @@ class ClaimVerdict(BaseModel):
 
 class VerdictBatch(BaseModel):
     verdicts: list[ClaimVerdict]
+
+
+class VCScores(BaseModel):
+    team: int = Field(ge=1, le=5)
+    market: int = Field(ge=1, le=5)
+    product: int = Field(ge=1, le=5)
+    traction: int = Field(ge=1, le=5)
+    moat: int = Field(ge=1, le=5)
+    timing: int = Field(ge=1, le=5)
+    business_model: int = Field(ge=1, le=5)
+
+
+class ScoreDriver(BaseModel):
+    reason: str = Field(description="Why this category received its score, including uncertainty.")
+    claim_ids: list[str] = Field(description="Supported claim IDs that informed the score; empty if none.")
+
+
+class ScoreDrivers(BaseModel):
+    team: ScoreDriver
+    market: ScoreDriver
+    product: ScoreDriver
+    traction: ScoreDriver
+    moat: ScoreDriver
+    timing: ScoreDriver
+    business_model: ScoreDriver
+
+
+class VCDecision(BaseModel):
+    decision: Literal["invest", "pass", "invest_with_conditions"]
+    conviction: float = Field(ge=0, le=1)
+    scores: VCScores
+    score_drivers: ScoreDrivers
+    key_reasons_for: list[str]
+    key_reasons_against: list[str]
+    deal_terms_sketch: str
+    what_would_change_my_mind: list[str]
+    cited_claim_ids: list[str]
 
 
 class Usage(BaseModel):
@@ -88,18 +160,24 @@ class Turn(BaseModel):
     evidence_ids: list[str] = Field(default_factory=list)   # citations that were actually retrieved
     invalid_citations: int = 0                              # cited ids that were not in the retrieved set
     claims: list[ExtractedClaim] = Field(default_factory=list)
-    blocked: bool = False                                   # withheld: still anachronistic after regeneration
-    regenerations: int = 0
-    check_cost_usd: float = 0.0                             # extraction/anachronism calls, included in usage
+    check_cost_usd: float = 0.0                             # claim-extraction call, included in usage
+    calculation: str = ""                                   # arithmetic the speaker showed for the point
+    assumptions: list[str] = Field(default_factory=list)    # premises the evidence does not state
+    calculation_ok: bool | None = None                      # Python re-check; None = nothing checkable
+    estimates: list[dict] = Field(default_factory=list)     # Estimate dicts + their own calculation_ok
+    topic: str = ""                                         # agenda topic of the exchange
+    follow_up: bool = False                                 # True for the VC's "how did you get there?" probe
 
 
 class DebateState(TypedDict):
     run_id: str
     company_id: str
-    era: dict
     round: int  # completed question/answer/attack cycles
     next_speaker: str  # executive picked by the VC
     turns: Annotated[list[dict], operator.add]  # append-only; Turn.model_dump() dicts
     claims: Annotated[list[dict], operator.add]  # one record per extracted claim, with its verdict
     checked_through: int  # highest turn seq already fact-checked
     fact_note: str  # short summary of the latest fact-check, shown to the VC
+    decision: dict | None
+    agenda_covered: list[str]  # agenda topics already opened by a main VC question
+    follow_up: dict | None  # {"topic", "exec"} the next VC question must probe, else None

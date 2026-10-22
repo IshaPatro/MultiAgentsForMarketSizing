@@ -3,33 +3,30 @@ from __future__ import annotations
 
 import hashlib
 
-from debate.config import ROOT, CompanyConfig, EraContext
+from debate.config import ROOT, CompanyConfig
 
 PROMPT_DIR = ROOT / "prompts"
 ROLES = ("vc_opening", "vc", "ceo", "cfo", "cto", "devil")
 
 
 def prompt_version() -> str:
-    """Short hash over every prompt file, stored on each turn for reproducibility."""
+    """Short hash over role prompts and inline checker/decision prompts."""
     h = hashlib.sha256()
     for path in sorted(PROMPT_DIR.glob("*.md")):
         h.update(path.read_bytes())
+    for relative in ("src/debate/claims.py", "src/debate/nodes/factcheck.py", "src/debate/nodes/decision.py"):
+        h.update((ROOT / relative).read_bytes())
     return h.hexdigest()[:8]
 
 
-def build_system(role: str, *, company: CompanyConfig, era: EraContext, max_words: int, **extra: str) -> str:
-    """Role prompt first, then the shared rules + briefing. Stable per (role, era) so it is cacheable."""
+def build_system(role: str, *, company: CompanyConfig, max_words: int, **extra: str) -> str:
+    """Role prompt first, then the shared rules + company context. Stable per role, so it is cacheable."""
     if role not in ROLES:
         raise KeyError(f"unknown role {role!r}")
-    summary = company.summaries.get(era.name)
-    if summary is None:
-        raise KeyError(f"{company.company_id} has no briefing for era {era.name!r} yet")
     values = {
         "company_name": company.name,
-        "cutoff_date": era.cutoff_date.isoformat(),
-        "era_label": era.label,
         "max_words": max_words,
-        "summary": summary.strip(),
+        "summary": company.summary.strip(),
         "round_instruction": "",
         **extra,
     }

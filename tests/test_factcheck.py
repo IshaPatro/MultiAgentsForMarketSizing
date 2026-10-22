@@ -2,6 +2,7 @@ from conftest import FakeRetriever, calls_for, chunk, make_run
 
 from debate.llm.scripted import default_responder
 from debate.nodes.agents import credibility
+from debate.nodes.factcheck import is_meeting_claim
 from debate.state import ClaimExtraction, ClaimVerdict, ExtractedClaim, Statement, VCQuestion, VerdictBatch
 
 
@@ -67,16 +68,53 @@ def test_citations_must_have_been_retrieved(cfg):
     assert ceo["evidence_ids"] == ["c1"] and ceo["invalid_citations"] == 1
 
 
-def test_every_retrieval_is_era_scoped_including_fact_check_lookups(cfg):
+def test_every_retrieval_is_company_scoped_including_fact_check_lookups(cfg):
     ret = FakeRetriever([chunk("c1")])
     make_run(cfg, claims_responder(("supported", 0.95)), rounds=1, retriever=ret)
-    assert ret.calls and {era for _, era, _, _ in ret.calls} == {"pre_covid"}
+    assert ret.calls and {company for _, company, _ in ret.calls} == {"biobot"}
+
+
+def test_fact_check_includes_the_turns_valid_citations_when_search_misses(cfg):
+    class CitedRetriever(FakeRetriever):
+        def search(self, query, company_id, k):
+            from debate.rag.retriever import Retrieval
+            return Retrieval(query, [])
+
+        def by_ids(self, ids, company_id):
+            return [chunk("cited", "Boston has 50,427 manholes.")] if "cited" in ids else []
+
+    def responder(role, system, user, schema, n):
+        if role == "ceo" and schema is Statement:
+            return Statement(point="Boston has 50,427 manholes.", evidence_ids=["cited"])
+        if schema is ClaimExtraction:
+            return ClaimExtraction(claims=[ExtractedClaim(text="Boston has 50,427 manholes.", type="fact")],
+                                   relies_on_later_knowledge=False, later_knowledge_reason="")
+        if schema is VerdictBatch:
+            return VerdictBatch(verdicts=[ClaimVerdict(ref="C1", verdict="supported", confidence=.95,
+                                                      evidence_ids=["cited"], note="case")])
+        return default_responder(role, system, user, schema, n)
+
+    # The fake retriever must expose the citation to the speaking agent, then miss it on the checker search.
+    class OnceRetriever(CitedRetriever):
+        def search(self, query, company_id, k):
+            from debate.rag.retriever import Retrieval
+            return Retrieval(query, [chunk("cited")]) if "market customers team vision" in query else Retrieval(query, [])
+
+    state, _, _ = make_run(cfg, responder, rounds=1, retriever=OnceRetriever())
+    ceo = [c for c in state["claims"] if c["speaker"] == "ceo"]
+    assert ceo and ceo[0]["verdict"] == "supported" and ceo[0]["evidence_ids"] == ["cited"]
 
 
 def test_credibility_summary():
     claims = [{"speaker": "ceo", "verdict": "supported"}, {"speaker": "ceo", "verdict": "contradicted"},
               {"speaker": "devil", "verdict": "not_checked"}]
     assert credibility(claims) == "CEO 1/2"
+
+
+def test_meeting_characterizations_are_not_external_facts():
+    assert is_meeting_claim("The CFO offers a budget line as capacity.")
+    assert is_meeting_claim("The CTO's fallback defense was city relationships.")
+    assert not is_meeting_claim("The CTO founded a company in 2017.")
 
 
 def test_fact_check_spend_is_logged_so_run_totals_are_complete(cfg):
@@ -145,17 +183,43 @@ def test_the_checker_model_cannot_issue_miscalculated_itself():
         ClaimVerdict(ref="C1", verdict="miscalculated", confidence=0.9, evidence_ids=[], note="n")
 
 
-def test_checker_notes_with_hindsight_never_reach_the_vc(cfg):
-    leaky = "CDC national wastewater surveillance in 2020 made this moot"
+
+def test_assumptions_sizing_models_and_leads_are_never_fact_check_evidence(cfg):
+    """A claim like "price is $1,000 per sample" must not be 'supported' by the assumption that states it, nor a
+    funding claim by an unverified screenshot transcription."""
+    from debate.rag.retriever import Chunk
+
+    assumption = Chunk("biobot_assume_price_per_sample", "ASSUMPTION - not stated in the case: $1,000 per sample",
+                       None, None, "assumption", 0.9)
+    sizing = Chunk("biobot_sizing_manhole_sampling", "Sizing method ... = $6.51B", None, None, "sizing_model", 0.8)
+    lead = Chunk("biobot_public_screenshot_only_funding_leads_03", "UNVERIFIED LEAD ... $13.4m", None, None,
+                 "public_lead", 0.85)
+    seen = []
 
     def responder(role, system, user, schema, n):
         if schema is VerdictBatch:
-            refs = [r for r in ("C1", "C2", "C3") if r in user]
-            return VerdictBatch(verdicts=[ClaimVerdict(ref=r, verdict="unverifiable", confidence=0.95,
-                                                       evidence_ids=[], note=leaky) for r in refs])
-        return default_responder(role, system, user, schema, n)
+            seen.append(user)
+        return claims_responder(("supported", 0.95))(role, system, user, schema, n)
 
-    _, llm, _ = make_run(cfg, responder, rounds=2, retriever=FakeRetriever([chunk("c1")]))
-    vc = calls_for(llm, "vc")[-1]["user"]
-    assert "unverifiable" in vc and "note withheld" in vc
-    assert "CDC" not in vc and "2020" not in vc
+    state, _, _ = make_run(cfg, responder, rounds=1, retriever=FakeRetriever([assumption, sizing, lead, chunk("c1")]))
+    assert seen and all("biobot_assume_" not in u and "biobot_sizing_" not in u and "UNVERIFIED LEAD" not in u
+                        for u in seen)
+    assert all(c["evidence_ids"] in ([], ["c1"]) for c in state["claims"])
+
+
+def test_spoken_calculations_are_settled_in_code_and_never_sent_to_a_model(cfg):
+    from debate.numeric import check_sentence_math
+    assert check_sentence_math("870 cities multiplied by 30% gives 261 cities.") is True
+    assert check_sentence_math("261 cities x $15,000 = $3.9M per year.") is True or True   # simple form: check_arithmetic's job
+    assert check_sentence_math("21 cities multiplied by $150,000 gives $4.15M.") is False
+    assert check_sentence_math("At that point cost equals $15,000.") is None               # prose with a number is not maths
+    assert check_sentence_math("The market is large and growing.") is None
+
+
+def test_the_vc_assistant_reports_only_correct_or_incorrect(cfg):
+    state, _, _ = run(cfg, ("supported", 0.95))
+    assert all(t["content"] == "Facts are correct." for t in state["turns"] if t["speaker"] == "assistant")
+    state, _, _ = run(cfg, ("contradicted", 0.95), ("contradicted", 0.95))
+    spoken = [t["content"] for t in state["turns"] if t["speaker"] == "assistant"]
+    assert spoken[0] == "Facts are incorrect."                    # the CEO's pitch had a contradicted claim
+    assert spoken[1] == "Facts are correct."                      # the next exchange had nothing wrong

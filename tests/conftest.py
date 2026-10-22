@@ -1,9 +1,6 @@
-import os
-from datetime import date
-
 import pytest
 
-from debate.config import load_company, load_era, load_models
+from debate.config import load_company, load_models
 from debate.graph import build_graph
 from debate.llm.scripted import ScriptedClient, default_responder
 from debate.nodes.agents import Deps
@@ -15,35 +12,36 @@ def cfg():
     return load_models()
 
 
-def chunk(cid="c1", text="Boston has 50,427 manholes.", as_of=date(2017, 9, 30)):
-    return Chunk(cid, text, 11, "Gauging the Market", "case", as_of, 0.03)
+def chunk(cid="c1", text="Boston has 50,427 manholes."):
+    return Chunk(cid, text, 11, "Gauging the Market", "case", 0.03)
 
 
 class FakeRetriever:
-    """Returns fixed chunks and remembers what it was asked (query, era)."""
+    """Returns fixed chunks and remembers what it was asked (query, company, k)."""
 
     def __init__(self, chunks=None):
         self.chunks = chunks if chunks is not None else [chunk()]
         self.calls = []
 
-    def search(self, query, era, company_id, k):
-        self.calls.append((query, era.name, company_id, k))
+    def search(self, query, company_id, k):
+        self.calls.append((query, company_id, k))
         return Retrieval(query=query, chunks=list(self.chunks)[:k])
 
 
 def initial_state():
-    return {"run_id": "t", "company_id": "biobot", "era": {}, "round": 0, "next_speaker": "ceo", "turns": [],
-            "claims": [], "checked_through": 0, "fact_note": ""}
+    return {"run_id": "t", "company_id": "biobot", "round": 0, "next_speaker": "ceo", "turns": [],
+            "claims": [], "checked_through": 0, "fact_note": "", "decision": None,
+            "agenda_covered": [], "follow_up": None}
 
 
-def make_run(cfg, responder=default_responder, rounds=3, retriever=None, era="pre_covid"):
+def make_run(cfg, responder=default_responder, rounds=3, retriever=None):
     cfg.limits.max_rounds = rounds
     llm = ScriptedClient(cfg, responder)
     events, claims, costs = [], [], []
     # fact_check_cost is bookkeeping, not an anomaly: keep it out of `events` so tests can assert "no events".
     def on_event(t, p):
         (costs if t == "fact_check_cost" else events).append((t, p))
-    deps = Deps(llm=llm, cfg=cfg, company=load_company("biobot"), era=load_era(era), sinks=[],
+    deps = Deps(llm=llm, cfg=cfg, company=load_company("biobot"), sinks=[],
                 event_sinks=[on_event], claim_sinks=[claims.extend])
     if retriever is not None:
         deps.retriever = retriever

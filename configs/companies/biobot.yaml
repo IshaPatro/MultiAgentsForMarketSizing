@@ -1,8 +1,7 @@
 company_id: biobot
 name: Biobot Analytics
-# One or two sentences of era-appropriate context for the system prompt. Everything else an agent
-# knows must come from retrieved, dated chunks. An era without a summary is refused.
-summaries:
-  pre_covid: >-
-    Biobot is a pre-revenue MIT spin-out planning to sell wastewater-based drug-consumption data
-    (starting with opioids) to city governments.
+# One or two sentences of context for every system prompt. Facts and figures an agent cites must come from
+# retrieved corpus chunks (configs/corpus/biobot.yaml).
+summary: >-
+  Biobot is a pre-revenue MIT spin-out planning to sell wastewater-based drug-consumption data
+  (starting with opioids) to city governments.

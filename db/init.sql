@@ -4,8 +4,6 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE runs (
     run_id         TEXT PRIMARY KEY,
     company_id     TEXT NOT NULL,
-    era            TEXT NOT NULL,
-    cutoff_date    DATE NOT NULL,
     thread_id      TEXT NOT NULL,
     config_json    JSONB NOT NULL,
     started_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -61,8 +59,7 @@ CREATE TABLE retrievals (
     turn_id       BIGINT NOT NULL REFERENCES turns(turn_id),
     query         TEXT NOT NULL,
     chunk_ids     TEXT[] NOT NULL,
-    scores        REAL[] NOT NULL,
-    max_as_of_date DATE
+    scores        REAL[] NOT NULL
 );
 
 CREATE TABLE decisions (

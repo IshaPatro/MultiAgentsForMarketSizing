@@ -1,5 +1,11 @@
 implementation.md
 Biobot/
+# licensed HBS case PDF: never commit
+case_study/*
+!case_study/public_data.md
+!case_study/logo/
+case_study/logo/*
+!case_study/logo/Biobot.webp
 .DS_Store
 .venv/
 __pycache__/

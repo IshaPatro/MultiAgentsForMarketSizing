@@ -2,26 +2,14 @@
 from __future__ import annotations
 
 import os
-from datetime import date
 from pathlib import Path
 
 import yaml
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 ROOT = Path(__file__).resolve().parents[2]
-
-
-class EraContext(BaseModel, frozen=True):
-    """The simulated 'today'. Every layer receives this; nothing may use a later date."""
-
-    name: str
-    cutoff_date: date
-    description: str = ""
-    forbidden_terms: list[str] = Field(default_factory=list)
-
-    @property
-    def label(self) -> str:
-        return self.name.replace("_", "-")
 
 
 class TierConfig(BaseModel):
@@ -47,7 +35,6 @@ class Limits(BaseModel):
     context_turns: int = 6
     retrieval_k: int = 4
     claim_evidence_k: int = 3
-    max_regenerations: int = 2
     escalate_below: float = 0.75
 
 
@@ -60,7 +47,7 @@ class ModelsConfig(BaseModel):
 class CompanyConfig(BaseModel):
     company_id: str
     name: str
-    summaries: dict[str, str]
+    summary: str  # one or two sentences of context for every system prompt
 
 
 def load_env(path: Path = ROOT / ".env") -> None:
@@ -84,47 +71,72 @@ def load_models(root: Path = ROOT) -> ModelsConfig:
     return ModelsConfig(**_yaml(root / "configs" / "models.yaml"))
 
 
-def load_era(name: str, root: Path = ROOT) -> EraContext:
-    eras = _yaml(root / "configs" / "eras.yaml")
-    if name not in eras:
-        raise KeyError(f"unknown era {name!r}; known: {', '.join(eras)}")
-    return EraContext(name=name, **eras[name])
+DATE_PATTERN = r"^\d{4}(-\d{2}(-\d{2})?)?$"  # YYYY, YYYY-MM or YYYY-MM-DD: as precise as the source allows
 
 
-class CorpusSegment(BaseModel):
-    pages: tuple[int, int]
-    doc_type: str = "case"
-    skip: bool = False
-    reason: str = ""
+class CaseSource(BaseModel):
+    path: str
+    title: str
+    published: str = Field(pattern=DATE_PATTERN)
+    as_of: str = Field(pattern=DATE_PATTERN)          # the date the case narrative describes
+    narrative_pages: tuple[int, int]
+    caption_pages: tuple[int, int] | None = None
+    endnote_pages: tuple[int, int] | None = None
 
 
-class CorpusSource(BaseModel):
+class ExhibitSpec(BaseModel):
+    id: str
+    number: int
+    page: int
+    layout: Literal["matrix", "budget"]
+    topic: str
+    as_of: str = Field(pattern=DATE_PATTERN)
+    header_lines: int = 2                            # matrix: how many rows form each block's column headings
+    groups: list[str] = Field(default_factory=list)  # matrix: a label per block, e.g. public / private sector
+    columns: dict[str, str] = Field(default_factory=dict)  # budget: csv column -> heading in the exhibit
+
+
+class PublicSection(BaseModel):
+    topic: str
+    reliability: Literal["sourced", "lead"] = "sourced"   # lead: unverified transcription, never evidence
+
+
+class PublicSource(BaseModel):
     id: str
     path: str
     title: str
-    segments: list[CorpusSegment]
+    checked: str = Field(pattern=DATE_PATTERN)            # when the research was checked; no item may be later
+    sections: dict[str, PublicSection]
+    item_topics: dict[str, str] = Field(default_factory=dict)
+    item_dates: dict[str, str] = Field(default_factory=dict)
 
 
-class ApprovedDate(BaseModel):
-    """A human-reviewed date, pinned to the exact text that was reviewed.
-
-    Chunk ids are positional (page + counter), so after a chunking change the same id can hold different text.
-    The fingerprint makes such an approval stale instead of silently dating unreviewed text.
-    """
-
-    as_of: date
-    text_sha256: str  # first 12 hex chars of sha256(chunk text); see debate.rag.ingest.text_fingerprint
+class CuratedFiles(BaseModel):
+    facts: str
+    assumptions: str
+    sizing: str
 
 
 class CorpusManifest(BaseModel):
     company_id: str
-    default_as_of: date
-    sources: list[CorpusSource]
-    approved_dates: dict[str, ApprovedDate] = Field(default_factory=dict)
+    corpus_dir: str
+    case: CaseSource
+    topics: dict[str, str]
+    section_topics: dict[str, str]
+    paragraph_topics: dict[str, str] = Field(default_factory=dict)
+    exhibits: list[ExhibitSpec] = Field(default_factory=list)
+    caption_as_of: dict[int, str] = Field(default_factory=dict)
+    endnote_dates: dict[str, str] = Field(default_factory=dict)
+    public_sources: list[PublicSource] = Field(default_factory=list)
+    curated: CuratedFiles
 
-
-def load_eras(root: Path = ROOT) -> dict[str, EraContext]:
-    return {name: EraContext(name=name, **v) for name, v in _yaml(root / "configs" / "eras.yaml").items()}
+    def model_post_init(self, _context) -> None:
+        known = set(self.topics)
+        used = {*self.section_topics.values(), *self.paragraph_topics.values(), *(e.topic for e in self.exhibits),
+                *(s.topic for p in self.public_sources for s in p.sections.values()),
+                *(t for p in self.public_sources for t in p.item_topics.values())}
+        if used - known:
+            raise ValueError(f"manifest uses undeclared topics: {sorted(used - known)}")
 
 
 def load_corpus(company_id: str, root: Path = ROOT) -> CorpusManifest:

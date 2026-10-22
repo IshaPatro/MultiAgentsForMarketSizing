@@ -20,23 +20,23 @@ Transcripts and per-turn token/cost metadata land in `data/debate.sqlite`; LangG
 
 ## Corpus
 
-The corpus is the only evidence agents can cite; nothing searches the web at run time. It is built from the licensed 2017 case PDF (`case_study/01.BiobotAnalytics.pdf`, git-ignored), a public research ledger of what happened after it (`case_study/public_data.md`, tracked, 2017–2026) and three hand-curated files. **Every chunk is dated** (`as_of`: the date the information refers to).
+The corpus is the only evidence agents can cite; nothing searches the web at run time. Biobot source files live under `case_study/biobot/`, including the licensed PDF and public research ledger. The local manifest, generated files, and curated files live under `corpus/biobot/`. Both parent folders are git-ignored because the corpus and manifest contain case-derived material. **Every chunk is dated** (`as_of`: the date the information refers to).
 
 ```bash
 docker compose up -d
-.venv/bin/python -m debate build-corpus     # PDF -> case_study/corpus/ (no model calls)
+.venv/bin/python -m debate build-corpus     # PDF -> corpus/biobot/ (no model calls)
 .venv/bin/python -m debate ingest           # validate + embed locally into pgvector
 .venv/bin/python -m debate eval-retrieval   # hit@4 / MRR on eval/retrieval_questions.yaml
 .venv/bin/python -m debate run --dry-run --with-rag --rounds 1  # offline end-to-end citation check
 ```
 
-| `case_study/corpus/` | What | Built by |
+| `corpus/biobot/` | What | Built by |
 |---|---|---|
 | `narrative/NN_<topic>.md` | Case paragraphs grouped by topic (founders, origin, science, technology & IP, market, customers & GTM, competition, risks, financials, decision); page-split paragraphs re-joined; endnote markers resolved into links | `build-corpus` |
 | `exhibits/ex5.csv`, `ex6.csv` | Market-segmentation matrices, one row per segment | `build-corpus` |
 | `exhibits/ex7.csv` | Boston FY16–FY18 public-health budget, one row per line item, reconciled against every printed total | `build-corpus` |
 | `sources/endnotes.yaml` | The case's 44 endnotes, each with its own publication date and the paragraphs that cite it | `build-corpus` |
-| `sources/public.yaml` | The public ledger as 98 dated items (one per table row, bullet or paragraph), topic-tagged via `configs/corpus/biobot.yaml`, links kept aside, each with the rule used to date it; screenshot-only funding rows become `public_lead` chunks marked UNVERIFIED | `build-corpus` |
+| `sources/public.yaml` | The public ledger as 98 dated items (one per table row, bullet or paragraph), topic-tagged via the local `corpus/biobot/manifest.yaml`, links kept aside, each with the rule used to date it; screenshot-only funding rows become `public_lead` chunks marked UNVERIFIED | `build-corpus` |
 | `facts.yaml` | ~90 atomic facts: statement, value/unit, date, page, verbatim quote, endnote, kind (reported, estimate, claim, forecast, plan, quote, derived) and who said it | curated |
 | `assumptions.yaml` | Sizing inputs that are **not** in the case (world population, price per sample, capture rates), labelled as assumptions; some cite ledger items as evidence (catchment size from the 2018 Cary pilot, the $15,000/yr municipal price floor) | curated |
 | `sizing.yaml` | The slide's three TAM methods plus a price-floor cross-check, recomputed from facts and assumptions with the source of every input | curated |
@@ -46,7 +46,7 @@ Validation runs on every build and ingest: each fact's quote must appear on its 
 
 Retrieval is hybrid: pgvector (local `bge-small` embeddings) plus in-process Okapi BM25, merged with Reciprocal Rank Fusion (k=5 over 40 candidates per list), with a topic header on every indexed chunk. On the case corpus (41 questions), hit@4 rose from 85% to 93% (MRR 0.74 to 0.79) when Postgres `ts_rank` was replaced by BM25 and headers were added. With the public ledger (364 chunks, 49 questions) it is 96% (MRR 0.82). Agents see at most one assumption, one sizing model and one unverified lead per answer, so slide inputs cannot crowd out case facts, and each VC agenda topic reserves half the evidence slots for its corpus topics. The fact-checker never accepts an assumption, sizing model or unverified lead as evidence. Agent citations are accepted only when their chunk IDs were actually retrieved. `--dry-run` uses scripted replies and skips RAG unless `--with-rag` is supplied; `--no-rag` skips RAG for a real-model run.
 
-The curated files live under the git-ignored `case_study/` because they quote the licensed case: back them up yourself. `case_study/public_data.md` is the exception and is tracked.
+The curated files live under the git-ignored `corpus/biobot/` because they quote the licensed case. Back up the ignored `case_study/` and `corpus/` folders separately.
 
 ## Fact-check
 
@@ -104,19 +104,8 @@ A debate runs `limits.max_rounds: 9` (pitch + four agenda topics × main questio
 
 ## Static debate pages
 
-The committed `index.html` and `conversation.html` contain a **fictional public demo**. GitHub Pages serves these pages from `main`; the deployment workflow regenerates them from `site/public_demo.json` before publishing, so a local private export cannot become the live site by accident. Both pages also open directly from disk without a server.
+The public site is built from `web/`: `index.html` introduces the experiment, `biobot.html` compares optimized and Opus-only conversations, and `decision-memo.html` shows a separate memo for each run. The committed conversation and memo text is illustrative. The cost, token, and runtime figures come from two measured private runs. GitHub Pages regenerates the public pages from `site/public_demo.json` before each deployment.
 
-To preview private local runs, refresh both embedded snapshots:
+To preview both **full private runs** locally, run `python3 scripts/build_report_page.py`. It embeds the newest completed `routed` and `opus_low` run for each company in the conversation and memo pages. Optional Markdown reports are generated with `.venv/bin/python -m debate export` and appear as links in local memos.
 
-```bash
-python3 scripts/build_report_page.py
-```
-
-Markdown export is optional. To show links to detailed reports on the conversation page, run:
-
-```bash
-.venv/bin/python -m debate export
-python3 scripts/build_report_page.py
-```
-
-This local snapshot includes full saved debate transcripts derived from the licensed case. Keep it local unless you have rights to publish those transcripts. To restore the public demo before committing, run `python3 scripts/build_report_page.py --public-demo`.
+The private pages contain dialogue derived from the licensed case. Keep those local. Restore the publishable pages before committing with `python3 scripts/build_report_page.py --public-demo`. The deployment workflow performs this regeneration again in CI.

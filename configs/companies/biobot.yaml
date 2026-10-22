@@ -1,7 +1,7 @@
 company_id: biobot
 name: Biobot Analytics
 # One or two sentences of context for every system prompt. Facts and figures an agent cites must come from
-# retrieved corpus chunks (configs/corpus/biobot.yaml).
+# retrieved corpus chunks (local corpus/biobot/manifest.yaml).
 summary: >-
   Biobot is a pre-revenue MIT spin-out planning to sell wastewater-based drug-consumption data
   (starting with opioids) to city governments.

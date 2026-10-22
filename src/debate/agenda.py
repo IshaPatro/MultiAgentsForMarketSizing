@@ -17,7 +17,7 @@ class Topic:
     ask: str          # what the VC's main question should cover
     answer: str       # extra instruction for the executive answering the main question
     follow_up: str    # what the VC's follow-up must probe
-    corpus_topics: tuple[str, ...] = ()  # corpus topics (configs/corpus/*.yaml) whose evidence this topic needs
+    corpus_topics: tuple[str, ...] = ()  # corpus topics (corpus/<company>/manifest.yaml) whose evidence this topic needs
     evidence_query: str = ""             # what that evidence is about, used to fill the topic's reserved slots
 
 

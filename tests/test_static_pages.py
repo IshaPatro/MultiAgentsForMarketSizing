@@ -1,4 +1,4 @@
-"""The offline pages must retain every saved turn and its support fields."""
+"""The local comparison pages retain both profiles and their support fields."""
 import importlib.util
 import json
 import sqlite3
@@ -31,6 +31,8 @@ def test_static_snapshot_contains_complete_conversation_without_markdown_export(
                      ("dry-1", "biobot", "2026-10-23", "completed", '{"dry_run":true}', 0.0))
         conn.execute("INSERT INTO runs VALUES (?,?,?,?,?,?)",
                      ("older-1", "biobot", "2026-10-21", "completed", '{"dry_run":false}', 0.1))
+        conn.execute("INSERT INTO runs VALUES (?,?,?,?,?,?)",
+                     ("opus-1", "biobot", "2026-10-20", "completed", '{"profile":"opus_low","dry_run":false}', 0.5))
         conn.execute("INSERT INTO decisions VALUES (?,?)",
                      ("run-1", '{"decision":"pass","conviction":0.8}'))
         conn.executemany("INSERT INTO turns VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
@@ -46,10 +48,13 @@ def test_static_snapshot_contains_complete_conversation_without_markdown_export(
                      ("dry-1", 1, 1, "vc", "ceo", "Placeholder", "[]", 1, 0, "", 0, "", None, "[]", "[]"))
         conn.execute("INSERT INTO turns VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                      ("older-1", 1, 1, "vc", "ceo", "Older conversation", "[]", 2, 0, "", 0, "", None, "[]", "[]"))
+        conn.execute("INSERT INTO turns VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                     ("opus-1", 1, 1, "vc", "ceo", "Opus conversation", "[]", 2, 0, "", 0, "", None, "[]", "[]"))
     data = builder.build_data(db, tmp_path / "missing-reports")
-    assert len(data["runs"]) == 1
+    assert len(data["runs"]) == 2
     assert data["runs"][0]["id"] == "run-1"
-    assert [r["id"] for r in builder.build_data(db, include_dry_runs=True)["runs"]] == ["dry-1"]
+    assert [r["profile"] for r in data["runs"]] == ["routed", "opus_low"]
+    assert [r["id"] for r in builder.build_data(db, include_dry_runs=True)["runs"]] == ["dry-1", "opus-1"]
     run = data["runs"][0]
     assert [t["seq"] for t in run["turns"]] == [1, 2]
     assert run["report_available"] is False
@@ -58,7 +63,7 @@ def test_static_snapshot_contains_complete_conversation_without_markdown_export(
     assert run["turns"][1]["estimates"][0]["method"] == "Bottom up"
     assert run["turns"][1]["claims"][0]["verdict"] == "supported"
 
-    pages = (tmp_path / "index.html", tmp_path / "conversation.html")
+    pages = (tmp_path / "biobot.html", tmp_path / "decision-memo.html")
     for page in pages:
         page.write_text('<script id="report-data" type="application/json">{"runs":[]}</script>')
     builder.write_pages(data, pages)

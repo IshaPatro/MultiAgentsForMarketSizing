@@ -140,9 +140,9 @@ class CorpusManifest(BaseModel):
 
 
 def load_corpus(company_id: str, root: Path = ROOT) -> CorpusManifest:
-    path = root / "configs" / "corpus" / f"{company_id}.yaml"
+    path = root / "corpus" / company_id / "manifest.yaml"
     if not path.exists():
-        raise KeyError(f"no corpus manifest at {path}")
+        raise KeyError(f"no local corpus manifest at {path}; restore the company corpus before running")
     return CorpusManifest(**_yaml(path))
 
 

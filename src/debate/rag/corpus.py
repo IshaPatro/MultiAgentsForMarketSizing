@@ -508,7 +508,7 @@ def build_corpus(manifest: CorpusManifest, root: Path = ROOT) -> dict:
             continue
         lines = ["---", f"topic: {key}", f"title: {json.dumps(title, ensure_ascii=False)}",
                  f"source: {json.dumps(manifest.case.title, ensure_ascii=False)}", f"as_of: \"{manifest.case.as_of}\"",
-                 "generated: true   # by `debate build-corpus`; edit configs/corpus/*.yaml and rebuild instead", "---",
+                 "generated: true   # by `debate build-corpus`; edit corpus/<company>/manifest.yaml and rebuild instead", "---",
                  "", f"# {title}", ""]
         for c in mine:
             meta = {"id": c.chunk_id, "pages": c.meta["pages"], "section": c.section, "as_of": c.as_of,

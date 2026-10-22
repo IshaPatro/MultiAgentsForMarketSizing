@@ -46,7 +46,7 @@ def _yaml_str(value) -> str:
 
 
 class _Sources:
-    """chunk id -> human-readable source label (corpus layout from configs/corpus/<company>.yaml)."""
+    """chunk id -> human-readable source label (corpus layout from corpus/<company>/manifest.yaml)."""
 
     def __init__(self, company_id: str):
         try:

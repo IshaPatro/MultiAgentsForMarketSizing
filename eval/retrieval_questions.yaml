@@ -52,7 +52,7 @@ questions:
   - {kind: source, q: "When did HHS declare the opioid crisis a public health emergency?", expect: [biobot_note_41, biobot_fact_hhs_opioid_epidemic]}
   - {kind: assumption, q: "What price per sample does the bottom-up market size assume?", expect: [biobot_assume_price_per_sample, biobot_sizing_manhole_sampling]}
   - {kind: assumption, q: "How is the bottom-up manhole sampling market size calculated?", expect: [biobot_sizing_manhole_sampling]}
-  # ---- public ledger (case_study/public_data.md): what happened after the case, dated
+  # ---- public ledger (case_study/biobot/public_data.md): what happened after the case, dated
   - {kind: public, q: "Did Biobot go through Y Combinator, and when?", expect: [biobot_public_check_of_the_02], contains: ["Y Combinator"]}
   - {kind: public, q: "How many people did each Cary pilot sampling site represent?", expect: [biobot_public_history_and_operating_03, biobot_assume_people_per_catchment], contains: ["4,000"]}
   - {kind: public, q: "What is the minimum price a municipality pays Biobot per year?", expect: [biobot_public_company_and_offering_05, biobot_public_business_and_market_02, biobot_assume_municipal_price_floor], contains: ["$15,000"]}

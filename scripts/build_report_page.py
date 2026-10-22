@@ -1,4 +1,4 @@
-"""Embed saved SQLite debates in standalone overview and conversation pages.
+"""Embed both saved debate profiles in standalone conversation and memo pages.
 
 Run from any directory with: python3 scripts/build_report_page.py
 The generated HTML opens directly from disk without fetch requests.
@@ -9,18 +9,37 @@ import argparse
 import json
 import re
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 DB = ROOT / "data" / "debate.sqlite"
-PAGES = (ROOT / "index.html", ROOT / "conversation.html")
+PAGES = (ROOT / "web" / "biobot.html", ROOT / "web" / "decision-memo.html")
 PUBLIC_DEMO = ROOT / "site" / "public_demo.json"
 DATA_TAG = re.compile(r'(<script id="report-data" type="application/json">).*?(</script>)', re.S)
 
 
 def _json(value: str | None, default):
     return json.loads(value) if value else default
+
+
+def _run_metrics(conn: sqlite3.Connection, run_id: str, row: sqlite3.Row) -> dict:
+    """Summarize recorded inference usage, including older databases without model_calls."""
+    metrics = {"input_tokens": 0, "output_tokens": 0, "latency_s": 0, "wall_s": None, "calls": 0}
+    try:
+        usage = conn.execute(
+            "SELECT COUNT(*), COALESCE(SUM(input_tokens), 0), COALESCE(SUM(output_tokens), 0), "
+            "COALESCE(SUM(latency_ms), 0) FROM model_calls WHERE run_id=?", (run_id,)
+        ).fetchone()
+        metrics.update(calls=usage[0], input_tokens=usage[1], output_tokens=usage[2],
+                       latency_s=round(usage[3] / 1000))
+    except sqlite3.OperationalError:
+        pass
+    if "ended_at" in row.keys() and row["ended_at"] and row["started_at"]:
+        metrics["wall_s"] = round((datetime.fromisoformat(row["ended_at"])
+                                   - datetime.fromisoformat(row["started_at"])).total_seconds())
+    return metrics
 
 
 def build_data(db: Path = DB, reports: Path | None = None,
@@ -31,7 +50,7 @@ def build_data(db: Path = DB, reports: Path | None = None,
     with sqlite3.connect(db) as conn:
         conn.row_factory = sqlite3.Row
         runs = []
-        companies = set()
+        profiles = set()
         for row in conn.execute(
             "SELECT r.*, d.decision_json FROM runs r "
             "LEFT JOIN decisions d ON d.run_id=r.run_id "
@@ -40,9 +59,11 @@ def build_data(db: Path = DB, reports: Path | None = None,
         ):
             run_id = row["run_id"]
             config = _json(row["config_json"], {})
-            if (config.get("dry_run") and not include_dry_runs) or row["company_id"] in companies:
+            profile = config.get("profile") or "routed"
+            key = (row["company_id"], profile)
+            if (config.get("dry_run") and not include_dry_runs) or key in profiles:
                 continue
-            companies.add(row["company_id"])
+            profiles.add(key)
             claims_by_turn: dict[int, list[dict]] = {}
             for claim in conn.execute(
                 "SELECT turn_seq, text, verdict, note, evidence_ids FROM claims "
@@ -68,6 +89,7 @@ def build_data(db: Path = DB, reports: Path | None = None,
             runs.append({
                 "id": run_id, "company": row["company_id"], "started": row["started_at"],
                 "status": row["status"], "dry_run": bool(config.get("dry_run")),
+                "profile": profile, "metrics": _run_metrics(conn, run_id, row),
                 "cost": row["total_cost_usd"], "decision": _json(row["decision_json"], {}),
                 "report_available": (reports / f"{run_id}.md").is_file(), "turns": turns,
             })

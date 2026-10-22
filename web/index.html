@@ -27,12 +27,12 @@
       <div class="metric"><span>Debate runtime</span><strong>48%</strong><small>shorter with routing</small></div>
       <div class="metric"><span>Evidence retrieval</span><strong>96%</strong><small>hit@4 across 49 questions</small></div>
     </section>
-    <section class="section-intro"><div><div class="eyebrow">THE EXPERIMENT</div><h2>Compare the full decision path</h2></div><p>Two nine-round Biobot runs produced 79 versus 84 model calls. Costs, token counts, and runtime are measured for those runs; the public conversation text is an illustrative demo.</p></section>
+    <section class="section-intro"><div><div class="eyebrow">THE EXPERIMENT</div><h2>Compare the full decision path</h2></div><p>Two nine-round Biobot runs produced 79 versus 84 model calls. Costs, token counts, runtime, and the full saved conversations are published here.</p></section>
     <section class="path-grid" aria-label="Inference profiles">
       <article class="path-card optimized"><div class="path-top"><span class="tag">OPTIMIZED</span><span class="path-icon" aria-hidden="true">↗</span></div><h3>Route work by difficulty</h3><p>JEV classifies fact-check verdicts and moderator choices. Haiku extracts claims, Sonnet handles debate and escalations, and Opus makes the final decision.</p><div class="path-stats"><div><span>Measured cost</span><b>$0.5164</b></div><div><span>Tokens</span><b>209,252</b></div><div><span>Wall time</span><b>212s</b></div></div><a href="biobot.html#optimized">Explore optimized run →</a></article>
       <article class="path-card baseline"><div class="path-top"><span class="tag">NAIVE · OPUS-ONLY BASELINE</span><span class="path-icon" aria-hidden="true">↗</span></div><h3>One model for every call</h3><p>Claude Opus handles moderator routing, claim extraction, fact checks, debate turns, and the final decision without the System One classifier.</p><div class="path-stats"><div><span>Measured cost</span><b>$1.4925</b></div><div><span>Tokens</span><b>237,472</b></div><div><span>Wall time</span><b>411s</b></div></div><a href="biobot.html#naive">Explore baseline run →</a></article>
     </section>
-    <p class="disclosure">Public demo conversations and memos are illustrative. The inference measurements above come from two completed private Biobot runs; licensed case text and generated corpus files are excluded from this site.</p>
+    <p class="disclosure">This site publishes the two completed Biobot conversations and their VC decision memos. Licensed case text and generated corpus files are excluded.</p>
   </main>
   <footer class="site-footer"><span>NextGen Boardroom · Evidence-first investment analysis</span><a href="https://github.com/IshaPatro/MultiAgentsForMarketSizing">View project source ↗</a></footer>
 </body>

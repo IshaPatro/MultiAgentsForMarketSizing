@@ -3,11 +3,7 @@ Biobot/
 # Company source files and generated corpora may contain licensed material.
 case_study/
 corpus/
-# Generated run exports may contain case-derived dialogue.
-reports/raw/
-reports/runs/
-reports/*.md
-reports/*.json
+# Saved conversation exports are intentionally versioned for the public demo.
 .DS_Store
 .venv/
 __pycache__/

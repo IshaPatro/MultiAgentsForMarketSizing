@@ -104,9 +104,9 @@ A debate runs `limits.max_rounds: 9` (pitch + four agenda topics × main questio
 
 ## Static debate pages
 
-Open `index.html` directly in a browser for the company overview. Open `conversation.html` for the complete, ordered agent conversation. The pages show the latest completed live debate for each company. The transcript shows agenda topics and follow-ups, calculations, assumptions, sizing estimates, citations, fact-check verdicts, and the VC decision. Both pages are self-contained and do not need a server. Scripted dry runs are hidden by default; pass `--include-dry-runs` to the page builder if you want to inspect them.
+The committed `index.html` and `conversation.html` contain a **fictional public demo**. GitHub Pages serves these pages from `main`; the deployment workflow regenerates them from `site/public_demo.json` before publishing, so a local private export cannot become the live site by accident. Both pages also open directly from disk without a server.
 
-After a new run, refresh both embedded snapshots:
+To preview private local runs, refresh both embedded snapshots:
 
 ```bash
 python3 scripts/build_report_page.py
@@ -119,4 +119,4 @@ Markdown export is optional. To show links to detailed reports on the conversati
 python3 scripts/build_report_page.py
 ```
 
-The snapshot includes full saved debate transcripts derived from the licensed case. Keep it local unless you have rights to publish those transcripts.
+This local snapshot includes full saved debate transcripts derived from the licensed case. Keep it local unless you have rights to publish those transcripts. To restore the public demo before committing, run `python3 scripts/build_report_page.py --public-demo`.

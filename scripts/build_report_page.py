@@ -15,6 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DB = ROOT / "data" / "debate.sqlite"
 PAGES = (ROOT / "index.html", ROOT / "conversation.html")
+PUBLIC_DEMO = ROOT / "site" / "public_demo.json"
 DATA_TAG = re.compile(r'(<script id="report-data" type="application/json">).*?(</script>)', re.S)
 
 
@@ -86,8 +87,9 @@ def write_pages(data: dict, pages: tuple[Path, ...] = PAGES) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--include-dry-runs", action="store_true", help="also show scripted placeholder runs")
+    parser.add_argument("--public-demo", action="store_true", help="embed the fictional, publishable demo instead of private case transcripts")
     args = parser.parse_args()
-    data = build_data(include_dry_runs=args.include_dry_runs)
+    data = json.loads(PUBLIC_DEMO.read_text()) if args.public_demo else build_data(include_dry_runs=args.include_dry_runs)
     write_pages(data)
     print(f"Embedded {len(data['runs'])} saved runs in {', '.join(str(p) for p in PAGES)}")
 

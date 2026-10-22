@@ -63,7 +63,7 @@ def test_static_snapshot_contains_complete_conversation_without_markdown_export(
     assert run["turns"][1]["estimates"][0]["method"] == "Bottom up"
     assert run["turns"][1]["claims"][0]["verdict"] == "supported"
 
-    pages = (tmp_path / "biobot.html", tmp_path / "decision-memo.html")
+    pages = (tmp_path / "biobot.html",)
     for page in pages:
         page.write_text('<script id="report-data" type="application/json">{"runs":[]}</script>')
     builder.write_pages(data, pages)

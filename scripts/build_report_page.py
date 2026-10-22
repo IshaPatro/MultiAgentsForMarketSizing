@@ -1,4 +1,4 @@
-"""Embed both saved debate profiles in standalone conversation and memo pages.
+"""Embed both saved debate profiles in standalone company page.
 
 Run from any directory with: python3 scripts/build_report_page.py
 The generated HTML opens directly from disk without fetch requests.
@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DB = ROOT / "data" / "debate.sqlite"
-PAGES = (ROOT / "web" / "biobot.html", ROOT / "web" / "decision-memo.html")
+PAGES = (ROOT / "web" / "biobot.html",)
 PUBLIC_DEMO = ROOT / "site" / "public_demo.json"
 DATA_TAG = re.compile(r'(<script id="report-data" type="application/json">).*?(</script>)', re.S)
 

@@ -104,8 +104,8 @@ A debate runs `limits.max_rounds: 9` (pitch + four agenda topics × main questio
 
 ## Static debate pages
 
-The public site is built from `web/`: `index.html` introduces the experiment, `biobot.html` compares optimized and Opus-only conversations, and `decision-memo.html` shows a separate memo for each run. The committed conversation and memo text is illustrative. The cost, token, and runtime figures come from two measured private runs. GitHub Pages regenerates the public pages from `site/public_demo.json` before each deployment.
+The public site is built from `web/`: `index.html` introduces the experiment, `biobot.html` switches between optimized and Opus-only conversations and shows the selected VC decision memo on the same page. The committed conversation and memo text is illustrative. The cost, token, and runtime figures come from two measured private runs. GitHub Pages regenerates the public pages from `site/public_demo.json` before each deployment.
 
-To preview both **full private runs** locally, run `python3 scripts/build_report_page.py`. It embeds the newest completed `routed` and `opus_low` run for each company in the conversation and memo pages. Optional Markdown reports are generated with `.venv/bin/python -m debate export` and appear as links in local memos.
+To preview both **full private runs** locally, run `python3 scripts/build_report_page.py`. It embeds the newest completed `routed` and `opus_low` run for each company in the Biobot page. Optional Markdown reports are generated with `.venv/bin/python -m debate export` and appear as links in local memos.
 
 The private pages contain dialogue derived from the licensed case. Keep those local. Restore the publishable pages before committing with `python3 scripts/build_report_page.py --public-demo`. The deployment workflow performs this regeneration again in CI.

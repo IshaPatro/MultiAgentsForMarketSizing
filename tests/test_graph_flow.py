@@ -12,18 +12,17 @@ def test_three_rounds_give_nine_turns_in_order(cfg):
     assert set(state["decision"]["score_drivers"]) == {
         "team", "market", "product", "traction", "moat", "timing", "business_model"}
     speakers = [t["speaker"] for t in state["turns"]]
-    # 9 debate turns + a moderator notice per VC question (2) + a VC-assistant verdict after every attack (3)
-    assert len(speakers) == 14
-    assert speakers[0] == "vc" and speakers[1] == "ceo"          # opening asks the CEO for the pitch
-    debate = [s for s in speakers if s not in ("moderator", "assistant")]
-    assert debate[2::3] == ["devil"] * 3                          # devil attacks after every answer
-    assert speakers[:4] == ["vc", "ceo", "devil", "assistant"]    # the assistant checks each exchange
-    assert speakers[4:7] == ["vc", "moderator", speakers[6]] and speakers[7:9] == ["devil", "assistant"]
-    assert [t["seq"] for t in state["turns"]] == list(range(1, 15))
-    assert [t["round"] for t in state["turns"]] == [1] * 4 + [2] * 5 + [3] * 5
-    notice = state["turns"][5]
+    # every cycle: VC question, moderator notice, answer, devil's attack, VC-assistant verdict
+    assert len(speakers) == 15
+    assert speakers[:5] == ["vc", "moderator", "ceo", "devil", "assistant"]   # the pitch request is routed too
+    assert speakers[5:7] == ["vc", "moderator"] and speakers[8:10] == ["devil", "assistant"]
+    assert [t["seq"] for t in state["turns"]] == list(range(1, 16))
+    assert [t["round"] for t in state["turns"]] == [1] * 5 + [2] * 5 + [3] * 5
+    assert all(t["addressed_to"] == "panel" for t in state["turns"] if t["speaker"] == "vc")   # the VC names no one
+    assert state["turns"][1]["content"] == "This question will be taken up by the CEO."
+    notice = state["turns"][6]
     assert notice["content"] == "This question will be taken up by the CFO." and notice["addressed_to"] == "cfo"
-    assert state["turns"][6]["speaker"] == "cfo"                  # the answer comes from whoever the moderator named
+    assert state["turns"][7]["speaker"] == "cfo"                  # the answer comes from whoever the moderator named
     verdicts = [t for t in state["turns"] if t["speaker"] == "assistant"]
     assert all(v["content"] in ("Facts are correct.", "Facts are incorrect.") and v["addressed_to"] == "vc" for v in verdicts)
 
@@ -93,7 +92,7 @@ def test_long_runs_do_not_hit_the_graph_recursion_limit(tmp_path, monkeypatch, c
     monkeypatch.setattr(cli, "DATA", tmp_path)
     try:
         assert cli.main(["run", "--dry-run", "--rounds", "16"]) == 0
-        assert "completed: 79 turns" in capsys.readouterr().out
+        assert "completed: 80 turns" in capsys.readouterr().out
     finally:
         _drop_threads(tmp_path)
 

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="CTO portrait">
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#d9eaff"/><stop offset="1" stop-color="#8cb9e8"/></linearGradient><clipPath id="clip"><rect width="96" height="96" rx="22"/></clipPath></defs>
+  <g clip-path="url(#clip)"><rect width="96" height="96" fill="url(#bg)"/><circle cx="15" cy="18" r="22" fill="#fff" opacity=".2"/>
+    <path d="M8 98q3-24 25-31l15 8 15-8q22 7 25 31" fill="#2776a8"/><path d="M31 70q17 17 34 0" stroke="#65aed5" stroke-width="4" fill="none"/><path d="M40 61v11q8 8 16 0V61" fill="#9e6e55"/><ellipse cx="48" cy="42" rx="19" ry="23" fill="#be8867"/>
+    <path d="m27 38 2-14 13-10 5 8 9-9 5 11 9 3-5 14-4-10q-14 5-28 0z" fill="#25384e"/><path d="M26 39q-2-26 20-28 24 0 24 28" stroke="#257a9d" stroke-width="5" fill="none"/>
+    <rect x="23" y="36" width="8" height="17" rx="4" fill="#1d668f"/><rect x="65" y="36" width="8" height="17" rx="4" fill="#1d668f"/>
+    <path d="M37 43h9m6 0h9m-15 0h6" stroke="#25384e" stroke-width="2.7" stroke-linecap="round"/><path d="M45 51q3 2 6 0m-8 8q5 3 10 0" fill="none" stroke="#784f49" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="78" cy="77" r="12" fill="#fff"/><path d="m81 67-10 12h7l-3 9 11-13h-7z" fill="#3189c3"/>
+  </g>
+</svg>

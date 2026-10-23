@@ -24,7 +24,8 @@ from debate.state import ClaimVerdict, RouteChoice, Usage, VerdictBatch
 DEFAULT_URL = "https://api.typesafe.ai/v1/systemone"
 DEFAULT_MODEL = "jev-latest"
 INPUT_USD_PER_M = 0.042   # JEV bills input tokens only; output tokens are free
-CITE_THRESHOLD = 0.5  # a chunk is cited when JEV puts at least this probability on "this chunk is about the claim"
+CITE_THRESHOLD = 0.5
+RETRIES = 4   # extra attempts on 408/409/429/5xx or a dropped connection (backoff 1, 2, 4, 8 s or Retry-After)  # a chunk is cited when JEV puts at least this probability on "this chunk is about the claim"
 
 VERDICT_CRITERIA = {
     "supported": "The evidence states the claim or clearly implies it.",
@@ -70,20 +71,34 @@ def build_route_request(model: str, question: str) -> dict:
 
 
 class JevClient:
-    def __init__(self, api_key: str, base_url: str = DEFAULT_URL, opener=urlopen):
-        self.api_key, self.url, self.opener = api_key, base_url, opener
+    def __init__(self, api_key: str, base_url: str = DEFAULT_URL, opener=urlopen, sleep=time.sleep):
+        self.api_key, self.url, self.opener, self.sleep = api_key, base_url, opener, sleep
 
     def _post(self, payload: dict) -> dict:
-        request = Request(self.url, data=json.dumps(payload).encode(), method="POST",
-                          headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"})
-        with self.opener(request, timeout=60) as response:
-            return json.load(response)
+        """One JEV request. Rate limits, server errors and dropped connections are retried with backoff (a long
+        meeting makes hundreds of requests, and one transient failure must not end a paid run); other errors raise."""
+        body = json.dumps(payload).encode()
+        for attempt in range(RETRIES + 1):
+            request = Request(self.url, data=body, method="POST",
+                              headers={"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"})
+            try:
+                with self.opener(request, timeout=60) as response:
+                    return json.load(response)
+            except HTTPError as exc:
+                if exc.code not in (408, 409, 429) and exc.code < 500 or attempt == RETRIES:
+                    raise
+                delay = float(exc.headers.get("retry-after") or 2 ** attempt) if exc.headers else 2 ** attempt
+            except (URLError, TimeoutError, ConnectionError):
+                if attempt == RETRIES:
+                    raise
+                delay = 2 ** attempt
+            self.sleep(min(delay, 30))
 
     def _route(self, role: str, model: str, question: str, started: float) -> tuple[RouteChoice, Usage]:
         try:
             data = self._post(build_route_request(model, question))
             answer = data["answers"]["executive"]
-            usage = Usage(input_tokens=int(data["usage"]["input_tokens"]), output_tokens=int(data["usage"]["output_tokens"]),
+            usage = Usage(requests=1, input_tokens=int(data["usage"]["input_tokens"]), output_tokens=int(data["usage"]["output_tokens"]),
                           latency_ms=int((time.monotonic() - started) * 1000), cost_usd=0.0)
             usage.cost_usd = usage.input_tokens * INPUT_USD_PER_M / 1e6
             return RouteChoice(executive=answer["choice"], confidence=float(answer["confidence"]),
@@ -124,7 +139,7 @@ class JevClient:
                                              note=f"JEV {data.get('model', model)}: evidence covers it {covered:.0%}"))
             except (HTTPError, URLError, OSError, KeyError, TypeError, ValueError) as exc:
                 raise LLMError(f"{role}: JEV request for {item['ref']} failed: {exc}") from exc
-        usage = Usage(input_tokens=input_tokens, output_tokens=output_tokens,
+        usage = Usage(requests=len(verdicts), input_tokens=input_tokens, output_tokens=output_tokens,
                       latency_ms=int((time.monotonic() - started) * 1000),
                       cost_usd=input_tokens * INPUT_USD_PER_M / 1e6)
         return VerdictBatch(verdicts=verdicts), usage

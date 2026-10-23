@@ -41,8 +41,6 @@ def build_dashboard(store: SqliteStore, company: str = "biobot", version: str | 
 
     metric("Cross-agent memory access attempts", str(totals["memory_leak_attempts"]), "0",
            "PASS" if totals["memory_leak_attempts"] == 0 and rows else "PENDING" if not rows else "FAIL")
-    metric("Over-limit turns", str(totals["over_word_limit"]), "0",
-           "PASS" if totals["over_word_limit"] == 0 and totals["turns"] else "PENDING" if not totals["turns"] else "FAIL")
     grounded, factual = totals["cited_factual_claims"], totals["factual_claims"]
     metric("Factual claims with valid retrieved citations", f"{_pct(grounded, factual)} ({grounded}/{factual})", "≥95%",
            "PASS" if factual and grounded / factual >= .95 else "FAIL" if factual else "PENDING")

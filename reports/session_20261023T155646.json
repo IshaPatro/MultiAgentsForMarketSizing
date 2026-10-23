@@ -1,21 +1,21 @@
 {
-  "started_at": "2026-10-22T17:32:00+00:00",
-  "company": "Biobot",
-  "rounds": 9,
+  "started_at": "2026-10-23T15:56:46+00:00",
+  "company": "biobot",
+  "max_rounds": 60,
   "profile": "routed",
   "dry_run": false,
   "runs": [
     {
-      "run_id": "eb99bd6267d1",
+      "run_id": "4a2867c30c8b",
       "profile": "routed",
       "status": "completed",
-      "cost_usd": 0.5163945700000001
+      "cost_usd": 4.318508348000001
     },
     {
-      "run_id": "0e1c632bf216",
+      "run_id": "1f3fc5752d73",
       "profile": "opus_low",
       "status": "completed",
-      "cost_usd": 1.4924612
+      "cost_usd": 13.193190000000001
     }
   ],
   "reports": [
@@ -25,6 +25,6 @@
     "inference_comparison.md",
     "evaluation_dashboard.md"
   ],
-  "finished_at": "2026-10-22T17:42:35+00:00",
-  "total_cost_usd": 2.008856
+  "finished_at": "2026-10-23T17:16:03+00:00",
+  "total_cost_usd": 17.511698
 }

@@ -31,7 +31,7 @@ class FakeRetriever:
 def initial_state():
     return {"run_id": "t", "company_id": "biobot", "round": 0, "next_speaker": "ceo", "turns": [],
             "claims": [], "checked_through": 0, "fact_note": "", "decision": None,
-            "agenda_covered": [], "follow_up": None}
+            "agenda_covered": [], "follow_up": None, "current": None, "vc_ready": False}
 
 
 def make_run(cfg, responder=default_responder, rounds=3, retriever=None):
@@ -46,7 +46,7 @@ def make_run(cfg, responder=default_responder, rounds=3, retriever=None):
     if retriever is not None:
         deps.retriever = retriever
     graph = build_graph(deps)
-    state = graph.invoke(initial_state(), {"recursion_limit": 80})
+    state = graph.invoke(initial_state(), {"recursion_limit": 5 * rounds + 10})
     deps.events, deps.recorded_claims, deps.fact_check_costs = events, claims, costs
     return state, llm, deps
 

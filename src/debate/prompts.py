@@ -19,13 +19,12 @@ def prompt_version() -> str:
     return h.hexdigest()[:8]
 
 
-def build_system(role: str, *, company: CompanyConfig, max_words: int, **extra: str) -> str:
+def build_system(role: str, *, company: CompanyConfig, **extra: str) -> str:
     """Role prompt first, then the shared rules + company context. Stable per role, so it is cacheable."""
     if role not in ROLES:
         raise KeyError(f"unknown role {role!r}")
     values = {
         "company_name": company.name,
-        "max_words": max_words,
         "summary": company.summary.strip(),
         "round_instruction": "",
         **extra,

@@ -50,6 +50,7 @@ class ClaudeClient:
             cache_read_tokens=getattr(u, "cache_read_input_tokens", 0) or 0,
             cache_write_tokens=getattr(u, "cache_creation_input_tokens", 0) or 0,
             latency_ms=latency_ms,
+            requests=1,
         )
         usage.cost_usd = compute_cost(self.cfg, tier.model, usage)
         return response.parsed_output, usage

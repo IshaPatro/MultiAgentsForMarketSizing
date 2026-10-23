@@ -47,7 +47,7 @@ def build_corpus_cmd(args: argparse.Namespace) -> int:
     out = corpus_dir(manifest)
     print(f"built {out}: {stats['narrative_chunks']} narrative chunks from {stats['paragraphs']} paragraphs, "
           f"{stats['exhibits']} exhibit tables, {stats['captions']} captions, {stats['endnotes']} dated endnotes, "
-          f"{stats['public_items']} dated public-ledger items")
+          f"{stats['public_items']} dated source-ledger items")
     for line in stats["reconciliation"]:
         print(f"  exhibit check: {line}")
     print(f"index and sizing lineage: {out / 'README.md'}")
@@ -111,7 +111,7 @@ def run(args: argparse.Namespace) -> int:
         dry_run, with_rag, no_rag = args.dry_run, args.with_rag, args.no_rag
         initial = {"run_id": run_id, "company_id": company.company_id, "round": 0, "next_speaker": "ceo",
                    "turns": [], "claims": [], "checked_through": 0, "fact_note": "", "decision": None,
-                   "agenda_covered": [], "follow_up": None}
+                   "agenda_covered": [], "follow_up": None, "current": None, "vc_ready": False}
         spent_before = 0.0
 
     if dry_run:
@@ -363,7 +363,7 @@ def main(argv: list[str] | None = None) -> int:
     ing.set_defaults(fn=ingest_cmd)
     r = sub.add_parser("run", help="run one debate")
     r.add_argument("--company", default="biobot")
-    r.add_argument("--rounds", type=int, help="override limits.max_rounds")
+    r.add_argument("--rounds", type=int, help="override limits.max_rounds (a runaway guard: the VC stops when it is ready)")
     r.add_argument("--dry-run", action="store_true", help="scripted replies, no API calls; skips RAG unless --with-rag")
     r.add_argument("--with-rag", action="store_true", help="retrieve real case chunks during an offline dry run")
     r.add_argument("--no-rag", action="store_true", help="run without retrieval (agents see no evidence)")
@@ -405,10 +405,14 @@ def main(argv: list[str] | None = None) -> int:
     es = sub.add_parser("eval-stability", help="collect independent live runs for decision-stability scoring")
     es.add_argument("--company", default="biobot")
     es.add_argument("--repeats", type=int, default=5)
-    es.add_argument("--rounds", type=int, default=9)
+    es.add_argument("--rounds", type=int, default=60, help="runaway guard per run, as for `run`")
     es.add_argument("--profile", choices=("routed", "opus_low"), default="routed")
     es.set_defaults(fn=eval_stability_cmd)
     args = p.parse_args(argv)
+    if getattr(args, "company", None):
+        # Company ids are lower-case slugs (`company_id: biobot`). "Biobot" would still find the files on a
+        # case-insensitive disk but store and query runs under two different ids, so normalise it here once.
+        args.company = args.company.strip().lower()
     return args.fn(args)
 
 

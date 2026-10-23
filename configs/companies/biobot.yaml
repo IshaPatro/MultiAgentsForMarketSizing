@@ -3,5 +3,6 @@ name: Biobot Analytics
 # One or two sentences of context for every system prompt. Facts and figures an agent cites must come from
 # retrieved corpus chunks (local corpus/biobot/manifest.yaml).
 summary: >-
-  Biobot is a pre-revenue MIT spin-out planning to sell wastewater-based drug-consumption data
-  (starting with opioids) to city governments.
+  Biobot began as an MIT spin-out focused on wastewater-based public-health surveillance.
+  This boardroom simulation includes a clearly labeled synthetic 2026 operating packet alongside
+  the historical case and public sources; synthetic figures are scenario ground truth only.

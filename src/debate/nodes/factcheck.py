@@ -29,6 +29,8 @@ def is_meeting_claim(text: str) -> bool:
 SYSTEM = (
     "You are a neutral fact-checker in a simulated venture-capital meeting. For each numbered claim you get the "
     "most relevant EVIDENCE chunks. Judge ONLY against that evidence:\n"
+    "- A SYNTHETIC SCENARIO GROUND TRUTH chunk is authoritative for the hypothetical boardroom scenario only. "
+    "It does not verify a claim about real-world Biobot outside that scenario.\n"
     "- supported: the evidence states it or clearly implies it.\n"
     "- contradicted: the evidence states something incompatible (a different number, date or fact). "
     "If the evidence gives an exact date for the same event, a different asserted date is contradicted.\n"

@@ -57,11 +57,11 @@ def test_a_wrong_calculation_becomes_a_code_verified_miscalculation_the_vc_sees(
     assert "does NOT add up" in last_vc and "miscalculated" in last_vc
 
 
-def test_support_is_kept_short(cfg):
+def test_support_is_kept_whole_and_only_blanks_are_dropped(cfg):
     long = " ".join(["word"] * 80)
     state, _, _ = make_run(cfg, _cfo_responder(long, ["a", "b", "c", "d", " "]), rounds=2)
     cfo = next(t for t in state["turns"] if t["speaker"] == "cfo")
-    assert len(cfo["calculation"].split()) <= 40 and cfo["assumptions"] == ["a", "b", "c"]
+    assert len(cfo["calculation"].split()) == 80 and cfo["assumptions"] == ["a", "b", "c", "d"]
 
 
 def test_sqlite_keeps_the_maths_columns(tmp_path):

@@ -1,6 +1,6 @@
 """LangGraph wiring for the debate and the final VC decision.
 
-  vc_open -> ceo (pitch) -> devil -> fact_check -> [round < max?] -> vc_question -> route -> ceo|cfo|cto -> devil -> ...
+  vc_open -> route -> exec (pitch) -> devil -> fact_check -> vc_question -> [ready? -> vc_decision] -> route -> exec -> devil -> ...
 """
 from __future__ import annotations
 
@@ -30,12 +30,14 @@ def build_graph(deps: Deps, checkpointer: BaseCheckpointSaver | None = None,
         g.add_node(role, executive_node(deps, role))
 
     g.add_edge(START, "vc_open")
-    g.add_edge("vc_open", "ceo")  # the opening asks the CEO for the pitch
-    g.add_edge("vc_question", "route")
+    g.add_edge("vc_open", "route")  # the pitch request is routed by the moderator like every other question
+    # The VC asks until it is ready to decide; `max_rounds` is only a runaway guard.
+    g.add_conditional_edges("vc_question", lambda s: "vc_decision" if s.get("vc_ready") else "route",
+                            {"vc_decision": "vc_decision", "route": "route"})
     g.add_conditional_edges("route", lambda s: s["next_speaker"], {r: r for r in EXECUTIVES})
     for role in EXECUTIVES:
         g.add_edge(role, "devil")
-    # `round` counts completed cycles; stop once max_rounds cycles (pitch included) have run.
+    # `round` counts completed cycles; the safety cap ends the meeting if the VC never says it is ready.
     g.add_edge("devil", "fact_check")
     g.add_conditional_edges("fact_check", lambda s: "vc_decision" if s["round"] >= max_rounds else "vc_question",
                             {"vc_decision": "vc_decision", "vc_question": "vc_question"})

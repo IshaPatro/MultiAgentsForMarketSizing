@@ -9,7 +9,8 @@ from pydantic import BaseModel, Field
 Executive = Literal["ceo", "cfo", "cto"]
 
 
-AgendaTopic = Literal["market_size", "customers", "unit_economics", "technology_moat", "go_to_market", "risks"]
+AgendaTopic = Literal["market_size", "customers", "unit_economics", "technology_moat", "go_to_market",
+                      "icp_beachhead", "competition", "founders_team", "vision", "fundraise", "use_of_funds", "risks"]
 
 
 class Estimate(BaseModel):
@@ -20,16 +21,16 @@ class Estimate(BaseModel):
         description="Step by step with units, one 'expression = result' per step separated by ';', ending in "
         "this estimate's result (e.g. '$110B x 20% = $22B; $22B x 4.6% = $1.0B; $1.0B x 50% = $506M')."
     )
-    assumptions: list[str] = Field(default_factory=list, description="Up to 3 assumptions behind this estimate.")
+    assumptions: list[str] = Field(default_factory=list, description="Every assumption behind this estimate.")
 
 
 class Statement(BaseModel):
-    """Structured reply for CEO / CFO / CTO / Devil's Advocate: exactly one point."""
+    """Structured reply for CEO / CFO / CTO / Devil's Advocate."""
 
-    point: str = Field(description="The single point, at most 60 words, no preamble.")
+    point: str = Field(description="Your answer: precise and complete, specifics first, no preamble or filler.")
     evidence_ids: list[str] = Field(
         default_factory=list,
-        description="Ids of the EVIDENCE chunks this point relies on (max 2). Empty if it is opinion or the evidence is silent.",
+        description="Ids of the EVIDENCE chunks this answer relies on. Empty if it is opinion or the evidence is silent.",
     )
     calculation: str = Field(
         default="",
@@ -38,7 +39,7 @@ class Statement(BaseModel):
     )
     assumptions: list[str] = Field(
         default_factory=list,
-        description="Up to 3 assumptions the point depends on that the evidence does not state "
+        description="Every assumption the answer depends on that the evidence does not state "
         "(e.g. 'a city pays $50k per year'). Empty if the point rests only on evidence.",
     )
     estimates: list[Estimate] = Field(
@@ -49,11 +50,14 @@ class Statement(BaseModel):
 
 
 class VCQuestion(BaseModel):
-    """Structured reply for the VC: one question and who should answer it."""
+    """Structured reply for the VC: a question to the whole team (the moderator decides who answers)."""
 
-    point: str = Field(description="One sharp question, at most 60 words.")
-    addressed_to: Executive = Field(description="Your suggestion for who should answer; a router makes the final call.")
+    point: str = Field(description="Your question to the team, precise and specific. Do not name who should answer. "
+                                   "If ready_to_decide is true, a one-sentence closing remark instead.")
     topic: AgendaTopic | None = Field(default=None, description="The agenda topic this question opens.")
+    follow_up: bool = Field(default=False, description="True to keep probing the topic just discussed.")
+    ready_to_decide: bool = Field(default=False,
+                                  description="True only when every agenda topic is covered and you have what you need.")
     evidence_ids: list[str] = Field(default_factory=list,
                                     description="Retrieved chunk IDs supporting any factual premise in the question.")
 
@@ -140,6 +144,7 @@ class Usage(BaseModel):
     cache_write_tokens: int = 0
     latency_ms: int = 0
     cost_usd: float = 0.0
+    requests: int = 0   # API requests behind this usage: 1 per Claude call; a JEV verdict batch makes one per claim
 
     def __add__(self, other: "Usage") -> "Usage":
         return Usage(**{k: getattr(self, k) + getattr(other, k) for k in Usage.model_fields})
@@ -181,3 +186,5 @@ class DebateState(TypedDict):
     decision: dict | None
     agenda_covered: list[str]  # agenda topics already opened by a main VC question
     follow_up: dict | None  # {"topic", "exec"} the next VC question must probe, else None
+    current: dict | None  # {"topic", "exec"} of the latest main question, for VC-chosen follow-ups
+    vc_ready: bool  # the VC has what it needs: go to the decision

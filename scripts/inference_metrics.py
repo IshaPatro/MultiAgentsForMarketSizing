@@ -1,52 +1,80 @@
-"""Write reports/inference_comparison.md: inference metrics of stored runs side by side, from data/debate.sqlite.
+"""Inference metrics of stored debates, from data/debate.sqlite. Every number is read from what was recorded per API
+call (`model_calls`) and per turn; nothing is estimated.
 
     python3 scripts/inference_metrics.py [RUN_ID ...] [--out reports/inference_comparison.md]
+                                         [--versus-out reports/optimized_vs_opus_only.md]
 
-With no run ids, every stored run is compared. Scripted dry runs are included but marked: their tokens and costs
-are simulated, so only live runs are comparable. A live routed run also gets a what-if estimate of the same
-tokens priced entirely on Opus (the real baseline is `main.ipynb` with RUN_COST_BASELINE = True).
+Writes
+  - inference_comparison.md   every stored run side by side, plus a per-tier breakdown of each live run
+  - optimized_vs_opus_only.md the latest live optimized (routed) run against the latest live all-Opus run
+  - reports/raw/<run_id>.json everything stored for each live run
+
+How tokens are counted (Anthropic `usage` semantics):
+  - Claude `input_tokens` are the uncached input only; cache writes and cache reads are reported separately and
+    priced separately (write 1.25x input, read 0.1x input). `output_tokens` include thinking tokens, billed as output.
+  - JEV reports input and output tokens; it bills input only ($0.042 per million), so its output tokens are shown but
+    never priced or mixed into billed Claude output.
 """
 import argparse
 import json
 import sqlite3
 import sys
+from datetime import datetime
 from pathlib import Path
 
-import yaml
-
 ROOT = Path(__file__).resolve().parent.parent
-PRICES = yaml.safe_load((ROOT / "configs" / "models.yaml").read_text())["prices"]
+DEBATERS = ("vc", "ceo", "cfo", "cto", "devil")
+ANSWERERS = ("ceo", "cfo", "cto", "devil")
+SYSTEM1_TIERS = ("fast", "verdict", "route")
 
 
-def price(model: str, i: int, o: int, cr: int, cw: int) -> float:
-    p = PRICES[model]
-    return (i * p["input"] + o * p["output"] + cr * p["cache_read"] + cw * p["cache_write"]) / 1e6
+def _provider(model: str) -> str:
+    return "jev" if model.startswith("jev:") else "claude"
 
 
 def load(con: sqlite3.Connection, run_id: str) -> dict:
-    run = con.execute("SELECT status, config_json, total_cost_usd, started_at, ended_at FROM runs WHERE run_id=?", (run_id,)).fetchone()
+    run = con.execute("SELECT status, config_json, total_cost_usd, started_at, ended_at, company_id FROM runs "
+                      "WHERE run_id=?", (run_id,)).fetchone()
     if run is None:
         sys.exit(f"unknown run {run_id}")
-    cfg = json.loads(run[1])
-    calls = con.execute("SELECT tier, model, COUNT(*), SUM(input_tokens), SUM(output_tokens), SUM(cache_read_tokens), "
-                        "SUM(cache_write_tokens), SUM(latency_ms), SUM(cost_usd) FROM model_calls WHERE run_id=? "
-                        "GROUP BY tier, model", (run_id,)).fetchall()
-    turns = con.execute("SELECT COUNT(*), AVG(word_count), MAX(word_count), SUM(retries), SUM(trimmed), "
-                        "SUM(is_follow_up), SUM(invalid_citations) FROM turns WHERE run_id=?", (run_id,)).fetchone()
-    claims = con.execute("SELECT COUNT(*), SUM(escalated), SUM(verdict='supported'), SUM(verdict='unverifiable'), "
-                         "SUM(verdict='contradicted'), SUM(verdict='miscalculated') FROM claims WHERE run_id=?",
-                         (run_id,)).fetchone()
+    calls = [dict(zip(("tier", "model", "rows", "requests", "input", "output", "cache_read", "cache_write", "ms", "usd"), r))
+             for r in con.execute(
+                 "SELECT tier, model, COUNT(*), SUM(requests), SUM(input_tokens), SUM(output_tokens), "
+                 "SUM(cache_read_tokens), SUM(cache_write_tokens), SUM(latency_ms), SUM(cost_usd) "
+                 "FROM model_calls WHERE run_id=? GROUP BY tier, model", (run_id,))]
+    p = {prov: {k: sum(c[k] or 0 for c in calls if _provider(c["model"]) == prov)
+                for k in ("requests", "input", "output", "cache_read", "cache_write", "ms", "usd")}
+         for prov in ("claude", "jev")}
+    words = con.execute(f"SELECT AVG(word_count), MAX(word_count) FROM turns WHERE run_id=? AND speaker IN "
+                        f"({','.join('?' * len(ANSWERERS))})", (run_id, *ANSWERERS)).fetchone()
+    speakers = dict(con.execute("SELECT speaker, COUNT(*) FROM turns WHERE run_id=? GROUP BY speaker", (run_id,)).fetchall())
+    claims = dict(con.execute("SELECT verdict, COUNT(*) FROM claims WHERE run_id=? GROUP BY verdict", (run_id,)).fetchall())
+    escalated = con.execute("SELECT COALESCE(SUM(escalated), 0) FROM claims WHERE run_id=?", (run_id,)).fetchone()[0]
+    in_code = con.execute("SELECT COUNT(*) FROM claims WHERE run_id=? AND checker_model='python'", (run_id,)).fetchone()[0]
     decision = con.execute("SELECT decision_json FROM decisions WHERE run_id=?", (run_id,)).fetchone()
     picks = dict(con.execute("SELECT addressed_to, COUNT(*) FROM turns WHERE run_id=? AND speaker='moderator' "
                              "AND is_follow_up=0 GROUP BY addressed_to", (run_id,)).fetchall())
     wall = None
     if run[3] and run[4]:
-        from datetime import datetime
         wall = (datetime.fromisoformat(run[4]) - datetime.fromisoformat(run[3])).total_seconds()
-    jev = con.execute("SELECT COUNT(*) FROM model_calls WHERE run_id=? AND model LIKE 'jev%'", (run_id,)).fetchone()[0]
-    return {"id": run_id, "status": run[0], "cfg": cfg, "cost": run[2] or 0.0, "calls": calls, "turns": turns,
-            "claims": claims, "decision": json.loads(decision[0]).get("decision") if decision else "-",
-            "picks": picks, "wall": wall, "jev_calls": jev}
+    usd = p["claude"]["usd"] + p["jev"]["usd"]
+    return {
+        "id": run_id, "company": run[5], "status": run[0], "cfg": json.loads(run[1]), "recorded_usd": run[2] or 0.0, "usd": usd,
+        "calls": calls, "p": p, "s1_requests": sum(c["requests"] or 0 for c in calls if c["tier"] in SYSTEM1_TIERS
+                                                    and c["model"] != "claude-opus-5-5"),
+        "requests": p["claude"]["requests"] + p["jev"]["requests"], "ms": p["claude"]["ms"] + p["jev"]["ms"],
+        "tokens": sum(p["claude"][k] for k in ("input", "output", "cache_read", "cache_write")) + p["jev"]["input"] + p["jev"]["output"],
+        "words": words, "speakers": speakers, "vc_turns": speakers.get("vc", 0),
+        "debate_turns": sum(speakers.get(s, 0) for s in DEBATERS), "claims": claims, "escalated": escalated,
+        "in_code": in_code, "decision": json.loads(decision[0]).get("decision") if decision else "-",
+        "picks": picks, "wall": wall,
+    }
+
+
+def reconciles(r: dict) -> str:
+    """The run's recorded total (from the per-run budget tracker) must equal the sum of its recorded calls."""
+    diff = r["recorded_usd"] - r["usd"]
+    return "matches the sum of all recorded calls" if abs(diff) < 1e-6 else f"MISMATCH: run total differs by ${diff:+.6f}"
 
 
 def dump_raw(con: sqlite3.Connection, run_id: str, out_dir: Path) -> Path:
@@ -55,11 +83,11 @@ def dump_raw(con: sqlite3.Connection, run_id: str, out_dir: Path) -> Path:
     con.row_factory = sqlite3.Row
     try:
         data = {"run": dict(con.execute("SELECT * FROM runs WHERE run_id=?", (run_id,)).fetchone())}
-        for table in ("turns", "claims", "model_calls", "retrievals", "events", "decisions"):
+        for table_name in ("turns", "claims", "model_calls", "retrievals", "events", "decisions"):
             try:
-                data[table] = [dict(r) for r in con.execute(f"SELECT * FROM {table} WHERE run_id=?", (run_id,))]
+                data[table_name] = [dict(r) for r in con.execute(f"SELECT * FROM {table_name} WHERE run_id=?", (run_id,))]
             except sqlite3.OperationalError:
-                data[table] = []
+                data[table_name] = []
     finally:
         con.row_factory = None
     path = out_dir / f"{run_id}.json"
@@ -67,81 +95,85 @@ def dump_raw(con: sqlite3.Connection, run_id: str, out_dir: Path) -> Path:
     return path
 
 
-def totals(r: dict) -> dict:
-    c = r["calls"]
-    t = {k: sum(row[i] or 0 for row in c) for k, i in (("n", 2), ("i", 3), ("o", 4), ("cr", 5), ("cw", 6), ("ms", 7), ("usd", 8))}
-    t["s1"] = sum(row[2] for row in c if row[0] in ("fast", "verdict"))
-    t["s1_usd"] = sum(row[8] for row in c if row[0] in ("fast", "verdict"))
-    t["opus_usd"] = sum(price("claude-opus-5-5", row[3] or 0, row[4] or 0, row[5] or 0, row[6] or 0) for row in c)
-    return t
-
-
 def table(headers: list[str], rows: list[list]) -> list[str]:
     return ["| " + " | ".join(headers) + " |", "|" + "|".join("---" if i == 0 else "---:" for i in range(len(headers))) + "|",
             *["| " + " | ".join(str(x) for x in row) + " |" for row in rows]]
 
 
-def versus(con, runs, T, out: Path) -> None:
-    """Optimized (routed) vs Opus-only, side by side. Uses a measured opus_low run when one exists, else an estimate."""
+def _secs(v) -> str:
+    return f"{v:,.0f}" if v else "n/a"
+
+
+def _picks(r: dict) -> str:
+    return " / ".join(str(r["picks"].get(k, 0)) for k in ("ceo", "cfo", "cto"))
+
+
+def _verdicts(r: dict) -> str:
+    c = r["claims"]
+    return " / ".join(str(c.get(v, 0)) for v in ("supported", "unverifiable", "contradicted", "miscalculated"))
+
+
+METRICS = [   # (label, value for one run): shared by both reports so the numbers are computed one way only
+    ("Wall-clock time for the whole debate (s)", lambda r: _secs(r["wall"])),
+    ("Model-call latency, summed over all calls (s)", lambda r: _secs(r["ms"] / 1000)),
+    ("VC turns (opening, questions, closing remark)", lambda r: r["vc_turns"]),
+    ("Debate turns (VC + executives + devil)", lambda r: r["debate_turns"]),
+    ("API requests: Claude", lambda r: f"{r['p']['claude']['requests']:,}"),
+    ("API requests: JEV", lambda r: f"{r['p']['jev']['requests']:,}"),
+    ("System-1 requests (claim extraction, verdicts, moderator)", lambda r: f"{r['s1_requests']:,}"),
+    ("Claude input tokens (uncached)", lambda r: f"{r['p']['claude']['input']:,}"),
+    ("Claude cache-write tokens", lambda r: f"{r['p']['claude']['cache_write']:,}"),
+    ("Claude cache-read tokens", lambda r: f"{r['p']['claude']['cache_read']:,}"),
+    ("Claude output tokens (incl. thinking)", lambda r: f"{r['p']['claude']['output']:,}"),
+    ("JEV input tokens (billed)", lambda r: f"{r['p']['jev']['input']:,}"),
+    ("JEV output tokens (reported by JEV, not billed)", lambda r: f"{r['p']['jev']['output']:,}"),
+    ("Total tokens processed (all of the above)", lambda r: f"{r['tokens']:,}"),
+    ("Cost: Claude (USD)", lambda r: f"${r['p']['claude']['usd']:.4f}"),
+    ("Cost: JEV (USD)", lambda r: f"${r['p']['jev']['usd']:.6f}"),
+    ("Cost: total (USD)", lambda r: f"${r['usd']:.4f}"),
+    ("Cost check", reconciles),
+    ("Cost per VC turn (USD)", lambda r: f"${r['usd'] / r['vc_turns']:.4f}" if r["vc_turns"] else "n/a"),
+    ("Avg / max words per answer (executives, devil)", lambda r: f"{r['words'][0] or 0:.0f} / {r['words'][1] or 0}"),
+    ("Moderator picks for main questions (CEO / CFO / CTO)", _picks),
+    ("Claims: supported / unverifiable / contradicted / miscalculated", _verdicts),
+    ("Claims settled in code (calculations)", lambda r: r["in_code"]),
+    ("Claims escalated to the stronger model", lambda r: r["escalated"]),
+    ("VC decision", lambda r: r["decision"]),
+]
+
+
+def versus(runs: list[dict], out: Path) -> None:
+    """The latest live optimized run against the latest live all-Opus run. Measured values only."""
     live = [r for r in runs if not r["cfg"].get("dry_run") and r["status"] == "completed"]
     routed = next((r for r in reversed(live) if r["cfg"].get("profile") == "routed"), None)
-    if routed is None:
-        out.write_text("# Optimized vs Opus-only\n\nNo completed live routed run is stored yet.\n")
-        print(f"wrote {out} (no live routed run)")
+    base = next((r for r in reversed(live) if r["cfg"].get("profile") == "opus_low"), None)
+    if routed is None or base is None:
+        missing = "an optimized (routed)" if routed is None else "an all-Opus (opus_low)"
+        out.write_text(f"# Optimized vs Opus-only\n\nNo completed live {missing} run is stored yet, so there is "
+                       "nothing measured to compare. Run `main.ipynb` with `RUN_COST_BASELINE = True`.\n")
+        print(f"wrote {out} (incomplete: {missing} run is missing)")
         return
-    base = next((r for r in reversed(live) if r["cfg"].get("profile") == "opus_low"
-                 and r["cfg"]["limits"]["max_rounds"] == routed["cfg"]["limits"]["max_rounds"]), None)
-    tr = T[routed["id"]]
-    if base:
-        tb, measured = T[base["id"]], True
-        b = {"calls": tb["n"], "i": tb["i"], "o": tb["o"], "cr": tb["cr"], "ms": tb["ms"], "cost": base["cost"],
-             "turns": base["turns"][0], "claims": base["claims"], "decision": base["decision"], "avg": base["turns"][1],
-             "wall": base["wall"], "picks": base["picks"], "jev": base["jev_calls"]}
-    else:
-        measured = False
-        b = {"calls": tr["n"], "i": tr["i"], "o": tr["o"], "cr": tr["cr"], "ms": None, "cost": tr["opus_usd"],
-             "turns": routed["turns"][0], "claims": None, "decision": None, "avg": None,
-             "wall": None, "picks": None, "jev": 0}
-    saved = b["cost"] - routed["cost"]
-    if measured and b["wall"] and routed["wall"]:
-        faster = f"{routed['wall'] / b['wall'] - 1:+.0%}"
-    na = "not measured"
-    rows = [
-        ["Models", "JEV (fact-check verdicts, moderator) + Haiku (claim extraction) + Sonnet (debate, escalations) + Opus (decision)"
-         if routed["jev_calls"] else "Haiku (System 1) + Sonnet (debate, escalations) + Opus (decision)", "Opus for every call, including the moderator"],
-        ["Run", f"`{routed['id']}` (measured)", f"`{base['id']}` (measured)" if measured else "estimate: same tokens at Opus prices"],
-        ["Model calls", tr["n"], b["calls"]],
-        ["Input tokens", f"{tr['i']:,}", f"{b['i']:,}"],
-        ["Output tokens", f"{tr['o']:,}", f"{b['o']:,}"],
-        ["Cache-read tokens", f"{tr['cr']:,}", f"{b['cr']:,}"],
-        ["Wall-clock time for the whole debate (s)", f"{routed['wall']:,.0f}" if routed["wall"] else na, f"{b['wall']:,.0f}" if b["wall"] else na],
-        ["Total call latency, summed over calls (s)", f"{tr['ms'] / 1000:,.0f}", f"{b['ms'] / 1000:,.0f}" if b["ms"] else na],
-        ["Total tokens (input + output)", f"{tr['i'] + tr['o']:,}", f"{b['i'] + b['o']:,}"],
-        ["JEV calls", routed["jev_calls"], b["jev"] if measured else "0"],
-        ["Moderator picks (CEO / CFO / CTO)", " / ".join(str(routed["picks"].get(k, 0)) for k in ("ceo", "cfo", "cto")),
-         " / ".join(str(b["picks"].get(k, 0)) for k in ("ceo", "cfo", "cto")) if b["picks"] is not None else na],
-        ["Cost (USD)", f"${routed['cost']:.4f}", f"${b['cost']:.4f}" + ("" if measured else " (estimate)")],
-        ["Cost per turn (USD)", f"${routed['cost'] / routed['turns'][0]:.4f}", f"${b['cost'] / b['turns']:.4f}"],
-        ["Avg words per turn", f"{routed['turns'][1]:.1f}", f"{b['avg']:.1f}" if b["avg"] else na],
-        ["Claims extracted (supported)", f"{routed['claims'][0]} ({routed['claims'][2]})",
-         f"{b['claims'][0]} ({b['claims'][2]})" if b["claims"] else na],
-        ["VC decision", routed["decision"], b["decision"] or na],
-        ["Saving from routing", f"${saved:.4f} ({saved / b['cost']:.0%} of Opus-only)", ""]]
-    if measured and b["wall"] and routed["wall"]:
-        rows.append(["Wall-clock difference (optimized vs Opus-only)", f"{routed['wall'] - b['wall']:+,.0f}s ({faster})", ""])
+    rows = [["Models", "JEV (moderator, fact-check verdicts) + Haiku (claim extraction) + Sonnet (debate, "
+             "escalations) + Opus (decision)" if routed["p"]["jev"]["requests"] else
+             "Haiku (System 1) + Sonnet (debate, escalations) + Opus (decision)",
+             "Opus for every call, the moderator included"],
+            ["Run", f"`{routed['id']}`", f"`{base['id']}`"]]
+    rows += [[label, f(routed), f(base)] for label, f in METRICS]
+    saved = base["usd"] - routed["usd"]
+    rows.append(["Optimized saves (cost)", f"${saved:.4f} ({saved / base['usd']:.1%} of Opus-only)" if base["usd"] else "n/a", ""])
+    if routed["wall"] and base["wall"]:
+        rows.append(["Optimized vs Opus-only (wall-clock)",
+                     f"{routed['wall'] - base['wall']:+,.0f}s ({routed['wall'] / base['wall'] - 1:+.1%})", ""])
     lines = ["# Optimized (routed) vs Opus-only", "",
-             f"Company {routed['cfg'].get('company_id', 'biobot')}, {routed['cfg']['limits']['max_rounds']} rounds. "
-             + ("Both columns are measured runs." if measured else
-                "**The Opus-only column is an estimate**: this run's recorded tokens priced at Opus rates. A real "
-                "Opus-only run would use different tokens, so latency, quality and claims are not measured."), ""]
+             f"Company `{routed['company']}`. Both columns are measured from the recorded API usage of "
+             "each run; nothing is estimated. Each meeting runs until the VC says it is ready to decide, so the two runs "
+             "can differ in length; compare per-turn figures as well as totals.", ""]
     lines += table(["Metric", "Optimized (routed)", "Opus only"], rows)
-    if not measured:
-        lines += ["", "To measure it: set `RUN_COST_BASELINE = True` in `main.ipynb` (raise `limits.max_cost_usd_per_run` in "
-                  "`configs/models.yaml` first: an Opus-only run is estimated at more than the current $1 cap, which would "
-                  "end it as `budget_exceeded`), run it, then re-run `scripts/inference_metrics.py`; this file switches to "
-                  "measured numbers by itself."]
+    lines += ["", "Claude input tokens exclude cache writes and reads, which are listed and priced separately; Claude "
+              "output tokens include thinking. JEV bills input tokens only ($0.042 per million), so its output tokens "
+              "are shown but not priced."]
     out.write_text("\n".join(lines) + "\n")
-    print(f"wrote {out} ({'measured' if measured else 'estimated'} baseline)")
+    print(f"wrote {out}")
 
 
 def main() -> None:
@@ -149,78 +181,43 @@ def main() -> None:
     ap.add_argument("run_ids", nargs="*")
     ap.add_argument("--out", default=str(ROOT / "reports" / "inference_comparison.md"))
     ap.add_argument("--versus-out", default=str(ROOT / "reports" / "optimized_vs_opus_only.md"))
+    ap.add_argument("--db", default=str(ROOT / "data" / "debate.sqlite"))
+    ap.add_argument("--raw-dir", default=str(ROOT / "reports" / "raw"))
     args = ap.parse_args()
-    con = sqlite3.connect(ROOT / "data" / "debate.sqlite")
+    con = sqlite3.connect(args.db)
+    if "requests" not in {r[1] for r in con.execute("PRAGMA table_info(model_calls)")}:
+        con.execute("ALTER TABLE model_calls ADD COLUMN requests INTEGER NOT NULL DEFAULT 1")
     ids = args.run_ids or [r[0] for r in con.execute("SELECT run_id FROM runs ORDER BY rowid")]
     runs = [load(con, i) for i in ids]
-    T = {r["id"]: totals(r) for r in runs}
-    kind = lambda r: "dry run (simulated)" if r["cfg"].get("dry_run") else "live (billed)"  # noqa: E731
-
-    def row(label, f):
-        return [label, *[f(r, T[r["id"]]) for r in runs]]
 
     head = ["Metric", *[f"`{r['id']}`" for r in runs]]
     lines = ["# Inference metrics: stored runs compared", "",
-             f"Generated from `data/debate.sqlite` by `scripts/inference_metrics.py`. {len(runs)} runs.", ""]
+             f"Generated from `{Path(args.db).name}` by `scripts/inference_metrics.py`. {len(runs)} runs. Every value is "
+             "read from the recorded API usage of each call; nothing is estimated.", ""]
     if any(r["cfg"].get("dry_run") for r in runs):
-        lines += ["> A **dry run** uses scripted replies with simulated token counts and costs, no latency and no "
-                  "real arguments. It shows the pipeline's shape, not model behaviour: compare latency, cost and "
-                  "quality only between live runs.", ""]
-    lines += ["## Run summary", ""] + table(head, [
-        row("Kind", lambda r, t: kind(r)),
-        row("Profile", lambda r, t: r["cfg"].get("profile")),
-        row("Status", lambda r, t: r["status"]),
-        row("Turns", lambda r, t: r["turns"][0]),
-        row("Follow-up turns", lambda r, t: r["turns"][5] or 0),
-        row("Avg words per turn (max)", lambda r, t: f"{r['turns'][1]:.1f} ({r['turns'][2]})"),
-        row("Over-limit rewrites / trims", lambda r, t: f"{r['turns'][3] or 0} / {r['turns'][4] or 0}"),
-        row("Moderator picks (CEO / CFO / CTO)", lambda r, t: " / ".join(str(r["picks"].get(k, 0)) for k in ("ceo", "cfo", "cto"))),
-        row("VC decision", lambda r, t: r["decision"])]) + [""]
-    lines += ["## Inference", ""] + table(head, [
-        row("Model calls", lambda r, t: t["n"]),
-        row("System-1 calls (share)", lambda r, t: f"{t['s1']} ({t['s1'] / t['n']:.0%})" if t["n"] else "-"),
-        row("Input tokens", lambda r, t: f"{t['i']:,}"),
-        row("Output tokens", lambda r, t: f"{t['o']:,}"),
-        row("Cache-read tokens (share of all input)", lambda r, t: f"{t['cr']:,} ({t['cr'] / (t['i'] + t['cr'] + t['cw']):.0%})" if t["n"] else "-"),
-        row("Wall-clock time (s)", lambda r, t: f"{r['wall']:,.0f}" if r["wall"] else "n/a"),
-        row("Total call latency (s)", lambda r, t: f"{t['ms'] / 1000:,.0f}" if t["ms"] else "n/a"),
-        row("Avg latency per call (s)", lambda r, t: f"{t['ms'] / t['n'] / 1000:.1f}" if t["ms"] else "n/a"),
-        row("Cost (USD)", lambda r, t: f"${r['cost']:.4f}"),
-        row("Cost per turn (USD)", lambda r, t: f"${r['cost'] / r['turns'][0]:.4f}"),
-        row("System-1 share of cost", lambda r, t: f"{t['s1_usd'] / t['usd']:.1%}" if t["usd"] else "-")]) + [""]
-    lines += ["## Fact-checking", ""] + table(head, [
-        row("Claims extracted", lambda r, t: r["claims"][0]),
-        row("Supported", lambda r, t: r["claims"][2] or 0),
-        row("Unverifiable", lambda r, t: r["claims"][3] or 0),
-        row("Contradicted", lambda r, t: r["claims"][4] or 0),
-        row("Miscalculated", lambda r, t: r["claims"][5] or 0),
-        row("Escalated to the stronger model", lambda r, t: r["claims"][1] or 0),
-        row("Invalid citations", lambda r, t: r["turns"][6] or 0)]) + [""]
+        lines += ["> A **dry run** uses scripted replies with simulated token counts and costs and no latency. Compare "
+                  "latency, cost and quality only between live runs.", ""]
+    lines += table(head, [["Kind", *["dry run (simulated)" if r["cfg"].get("dry_run") else "live (billed)" for r in runs]],
+                          ["Profile", *[r["cfg"].get("profile") for r in runs]],
+                          ["Status", *[r["status"] for r in runs]]]
+                   + [[label, *[f(r) for r in runs]] for label, f in METRICS]) + [""]
 
     for r in runs:
         if r["cfg"].get("dry_run"):
             continue
-        t = T[r["id"]]
-        lines += [f"## Live run `{r['id']}`: cost and latency by tier", ""] + table(
-            ["Tier", "Model", "Calls", "Input tok", "Output tok", "Cache-read tok", "Latency (s)", "Cost (USD)", "Share of cost"],
-            [[tier, f"`{m}`", n, f"{i:,}", f"{o:,}", f"{cr:,}", f"{ms / 1000:,.0f}", f"${usd:.4f}", f"{usd / t['usd']:.1%}"]
-             for tier, m, n, i, o, cr, cw, ms, usd in sorted(r["calls"], key=lambda x: -x[8])]) + [""]
-        saved = t["opus_usd"] - t["usd"]
-        lines += [f"### What-if: the same tokens, all on Opus (estimate)", ""] + table(
-            ["Setup", "Cost (USD)", "Note"],
-            [["Routed (recorded)", f"${t['usd']:.4f}", "Haiku for System 1, Sonnet for debate, Opus for the decision"],
-             ["All Opus, same tokens", f"${t['opus_usd']:.4f}", "Opus list prices applied to this run's recorded tokens"],
-             ["Difference", f"${saved:.4f} ({saved / t['opus_usd']:.0%} cheaper routed)", "Estimate only"]]) + [
-            "", "This is not a measured baseline: a real all-Opus run produces different tokens (different thinking "
-            "length, answers and claims) and slower calls. Run `main.ipynb` with `RUN_COST_BASELINE = True`, then "
-            "`debate compare --routed RUN --baseline OPUS_RUN`, for the measured comparison.", ""]
+        lines += [f"## Live run `{r['id']}` by tier and model", ""] + table(
+            ["Tier", "Model", "Requests", "Input tok", "Cache-write tok", "Cache-read tok", "Output tok",
+             "Latency (s)", "Cost (USD)", "Share of cost"],
+            [[c["tier"], f"`{c['model']}`", f"{c['requests']:,}", f"{c['input']:,}", f"{c['cache_write']:,}",
+              f"{c['cache_read']:,}", f"{c['output']:,}" + (" (not billed)" if _provider(c["model"]) == "jev" else ""),
+              f"{c['ms'] / 1000:,.1f}", f"${c['usd']:.6f}", f"{c['usd'] / r['usd']:.1%}" if r["usd"] else "-"]
+             for c in sorted(r["calls"], key=lambda c: -(c["usd"] or 0))]) + [""]
     Path(args.out).write_text("\n".join(lines))
     print(f"wrote {args.out}")
-    versus(con, runs, T, Path(args.versus_out))
-    raw = ROOT / "reports" / "raw"
+    versus(runs, Path(args.versus_out))
     for r in runs:
         if not r["cfg"].get("dry_run"):
-            print("wrote", dump_raw(con, r["id"], raw).relative_to(ROOT))
+            print("wrote", dump_raw(con, r["id"], Path(args.raw_dir)))
 
 
 if __name__ == "__main__":

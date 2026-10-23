@@ -41,7 +41,8 @@ CREATE TABLE IF NOT EXISTS model_calls (
     role TEXT NOT NULL, tier TEXT NOT NULL, model TEXT NOT NULL,
     input_tokens INTEGER NOT NULL, output_tokens INTEGER NOT NULL,
     cache_read_tokens INTEGER NOT NULL, cache_write_tokens INTEGER NOT NULL,
-    latency_ms INTEGER NOT NULL, cost_usd REAL NOT NULL, created_at TEXT NOT NULL
+    latency_ms INTEGER NOT NULL, cost_usd REAL NOT NULL, created_at TEXT NOT NULL,
+    requests INTEGER NOT NULL DEFAULT 1
 );
 CREATE TABLE IF NOT EXISTS decisions (
     run_id TEXT PRIMARY KEY REFERENCES runs(run_id), decision_json TEXT NOT NULL, created_at TEXT NOT NULL
@@ -61,7 +62,7 @@ TURN_COLUMNS = {
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds")   # run wall-clock is measured from these
 
 
 class SqliteStore:
@@ -73,6 +74,8 @@ class SqliteStore:
         if "era" in {r[1] for r in self.conn.execute("PRAGMA table_info(runs)")}:
             raise RuntimeError(f"{path} was created for the removed pre/post-COVID study (runs.era is NOT NULL); "
                                "delete it with `python -m debate reset --yes` and run again")
+        if "requests" not in {r[1] for r in self.conn.execute("PRAGMA table_info(model_calls)")}:
+            self.conn.execute("ALTER TABLE model_calls ADD COLUMN requests INTEGER NOT NULL DEFAULT 1")
         have = {r[1] for r in self.conn.execute("PRAGMA table_info(turns)")}
         for col, ddl in TURN_COLUMNS.items():
             if col not in have:
@@ -131,10 +134,11 @@ class SqliteStore:
     def add_model_call(self, run_id: str, role: str, tier: str, model: str, usage) -> None:
         self.conn.execute(
             "INSERT INTO model_calls (run_id, role, tier, model, input_tokens, output_tokens, "
-            "cache_read_tokens, cache_write_tokens, latency_ms, cost_usd, created_at) "
-            "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            "cache_read_tokens, cache_write_tokens, latency_ms, cost_usd, created_at, requests) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
             (run_id, role, tier, model, usage.input_tokens, usage.output_tokens,
-             usage.cache_read_tokens, usage.cache_write_tokens, usage.latency_ms, usage.cost_usd, _now()),
+             usage.cache_read_tokens, usage.cache_write_tokens, usage.latency_ms, usage.cost_usd, _now(),
+             max(getattr(usage, "requests", 1), 1)),
         )
         self.conn.commit()
 
@@ -148,7 +152,7 @@ class SqliteStore:
 
     def call_stats(self, run_id: str) -> dict:
         row = self.conn.execute(
-            "SELECT COUNT(*), SUM(CASE WHEN tier IN ('fast','verdict') AND model <> 'claude-opus-5-5' THEN 1 ELSE 0 END), "
+            "SELECT COUNT(*), SUM(CASE WHEN tier IN ('fast','verdict','route') AND model <> 'claude-opus-5-5' THEN 1 ELSE 0 END), "
             "COALESCE(SUM(input_tokens),0), COALESCE(SUM(output_tokens),0), "
             "COALESCE(SUM(cost_usd),0) FROM model_calls WHERE run_id=?", (run_id,),
         ).fetchone()

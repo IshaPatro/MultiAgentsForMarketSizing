@@ -118,3 +118,29 @@ def test_jev_moderator_route_is_priced_on_input_tokens():
     parsed, usage = JevClient("k", opener=lambda r, timeout: io.BytesIO(reply)).generate(
         role="route", tier=cfg.tiers["route"], system="S", user="Question: who owns the patents?", schema=RouteChoice)
     assert parsed.executive == "cto" and usage.cost_usd == pytest.approx(1000 * 0.042 / 1e6)
+
+
+def test_jev_retries_transient_failures_and_gives_up_on_client_errors():
+    from urllib.error import HTTPError
+    from debate.state import RouteChoice
+    ok = json.dumps({"model": "jev-1.14.0", "answers": {"executive": {"type": "choice", "choice": "cfo", "confidence": 0.9}},
+                     "usage": {"input_tokens": 10, "output_tokens": 2}}).encode()
+    attempts, waits = [], []
+
+    def flaky(request, timeout):
+        attempts.append(1)
+        if len(attempts) < 3:
+            raise HTTPError(request.full_url, 429 if len(attempts) == 1 else 503, "busy", {}, None)
+        return io.BytesIO(ok)
+
+    cfg = configure_profile(load_models(), "routed", "jev-latest")
+    parsed, _ = JevClient("k", opener=flaky, sleep=waits.append).generate(
+        role="route", tier=cfg.tiers["route"], system="S", user="Question: q", schema=RouteChoice)
+    assert parsed.executive == "cfo" and len(attempts) == 3 and waits == [1, 2]
+
+    def bad_request(request, timeout):
+        raise HTTPError(request.full_url, 400, "bad", {}, None)
+    with pytest.raises(LLMError):
+        JevClient("k", opener=bad_request, sleep=waits.append).generate(
+            role="route", tier=cfg.tiers["route"], system="S", user="Question: q", schema=RouteChoice)
+    assert waits == [1, 2]                                   # a 400 is not retried

@@ -28,9 +28,7 @@ class Price(BaseModel):
 
 
 class Limits(BaseModel):
-    max_words_per_turn: int = 60
-    max_rounds: int = 3
-    max_brevity_retries: int = 1
+    max_rounds: int = 3          # runaway guard only: the VC ends the meeting when it is ready to decide
     max_cost_usd_per_run: float = 1.0
     context_turns: int = 6
     retrieval_k: int = 4
@@ -98,7 +96,7 @@ class ExhibitSpec(BaseModel):
 
 class PublicSection(BaseModel):
     topic: str
-    reliability: Literal["sourced", "lead"] = "sourced"   # lead: unverified transcription, never evidence
+    reliability: Literal["sourced", "lead", "synthetic"] = "sourced"   # synthetic: scenario-only ground truth
 
 
 class PublicSource(BaseModel):

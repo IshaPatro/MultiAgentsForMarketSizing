@@ -14,6 +14,8 @@
   const decisionName = value => ({pass:'Pass', invest:'Invest', invest_with_conditions:'Invest with conditions', defer:'Defer'})[value] || String(value || 'Pending').replaceAll('_', ' ');
   const topics = {market_size:'Market size',customers:'Customers',unit_economics:'Unit economics',technology_moat:'Technology & moat',go_to_market:'Go-to-market',risks:'Risks'};
   const names = {VC:'Venture Capitalist',CEO:'Chief Executive',CFO:'Chief Financial Officer',CTO:'Chief Technology Officer',DEVIL:'Devil’s Advocate',MODERATOR:'Moderator','VC ASSISTANT':'Fact-checker'};
+  const portraits = {VC:'vc',CEO:'ceo',CFO:'cfo',CTO:'cto',DEVIL:'devil',MODERATOR:'moderator','VC ASSISTANT':'assistant'};
+  const avatar = speaker => `<span class="agent-avatar" data-role="${esc(speaker)}">${portraits[speaker] ? `<img src="avatars/${portraits[speaker]}.svg" alt="" width="40" height="40">` : esc(speaker.slice(0, 1))}</span>`;
   let activeProfile = location.hash === '#naive' || location.hash === '#opus_low' ? 'opus_low' : 'routed';
   const activeRun = () => activeProfile === 'routed' ? optimized : naive;
 
@@ -31,8 +33,7 @@
     for (const claim of claims) support.push(`<li><span class="verdict ${esc(claim.verdict)}">${esc(claim.verdict.replaceAll('_', ' '))}</span> · ${esc(claim.text)}${claim.note ? ` — ${esc(claim.note)}` : ''}</li>`);
     for (const id of turn.evidence_ids || []) support.push(`<li><b>Retrieved evidence:</b> ${esc(id)}</li>`);
     const display = speaker === 'DEVIL' ? 'Devil’s Advocate' : speaker === 'VC ASSISTANT' ? 'VC Assistant' : speaker;
-    const initial = speaker === 'DEVIL' ? '↳' : speaker === 'VC ASSISTANT' ? '✓' : speaker.slice(0, 1);
-    return `<article class="boardroom-turn" data-role="${esc(speaker)}"><span class="agent-avatar" data-role="${esc(speaker)}">${esc(initial)}</span><div class="turn-body"><div class="turn-header"><strong>${esc(display)}</strong><span>${esc(names[speaker] || speaker)}</span><span>→ ${esc(turn.addressed_to || 'room')}</span><small>#${number(turn.seq)}</small></div>${turn.topic ? `<div class="turn-topic">${esc(topics[turn.topic] || turn.topic)}${turn.follow_up ? ' · follow-up' : ''}</div>` : ''}<div class="turn-bubble">${esc(turn.content)}</div>${support.length ? `<details class="turn-support"><summary>Math, assumptions & fact checks (${support.length})</summary><ul>${support.join('')}</ul></details>` : ''}</div></article>`;
+    return `<article class="boardroom-turn" data-role="${esc(speaker)}">${avatar(speaker)}<div class="turn-body"><div class="turn-header"><strong>${esc(display)}</strong><span>${esc(names[speaker] || speaker)}</span><span>→ ${esc(turn.addressed_to || 'room')}</span><small>#${number(turn.seq)}</small></div>${turn.topic ? `<div class="turn-topic">${esc(topics[turn.topic] || turn.topic)}${turn.follow_up ? ' · follow-up' : ''}</div>` : ''}<div class="turn-bubble">${esc(turn.content)}</div>${support.length ? `<details class="turn-support"><summary>Math, assumptions & fact checks (${support.length})</summary><ul>${support.join('')}</ul></details>` : ''}</div></article>`;
   }
 
   function conversation(run, query, selectedRole) {
@@ -80,7 +81,7 @@
   function renderSidebar() {
     const speakers = [...new Set(runs.flatMap(run => (run.turns || []).map(turn => role(turn.speaker))))];
     const order = ['VC','CEO','CFO','CTO','DEVIL','MODERATOR','VC ASSISTANT'];
-    document.getElementById('agent-roster').innerHTML = order.filter(name => speakers.includes(name)).map(name => `<div class="roster-row"><span class="agent-avatar" data-role="${esc(name)}">${esc(name === 'DEVIL' ? '↳' : name === 'VC ASSISTANT' ? '✓' : name.slice(0, 1))}</span><span><strong>${esc(name === 'DEVIL' ? 'Devil’s Advocate' : name === 'VC ASSISTANT' ? 'VC Assistant' : name)}</strong><small>${esc(names[name])}</small></span></div>`).join('');
+    document.getElementById('agent-roster').innerHTML = order.filter(name => speakers.includes(name)).map(name => `<div class="roster-row">${avatar(name)}<span><strong>${esc(name === 'DEVIL' ? 'Devil’s Advocate' : name === 'VC ASSISTANT' ? 'VC Assistant' : name)}</strong><small>${esc(names[name])}</small></span></div>`).join('');
     const tokens = run => run ? (run.metrics?.input_tokens || 0) + (run.metrics?.output_tokens || 0) : 0;
     const rows = [
       ['Cost', optimized ? money(optimized.cost) : '—', naive ? money(naive.cost) : '—'],

@@ -248,8 +248,10 @@ def test_real_build_is_complete_dated_and_typed(built):
     for c in chunks:
         by_type[c.doc_type] = by_type.get(c.doc_type, 0) + 1
     assert set(by_type) == {"narrative", "fact", "exhibit_row", "exhibit_caption", "endnote", "assumption", "sizing_model",
-                            "public_source", "public_lead"}
-    assert stats["public_items"] == by_type["public_source"] + by_type["public_lead"] >= 90
+                            "public_source", "public_lead", "synthetic_source"}
+    assert stats["public_items"] == by_type["public_source"] + by_type["public_lead"] + by_type["synthetic_source"] >= 90
+    assert by_type["synthetic_source"] == 54
+    assert all("SYNTHETIC SCENARIO GROUND TRUTH" in c.text for c in chunks if c.doc_type == "synthetic_source")
     assert by_type["fact"] >= 80 and by_type["exhibit_row"] >= 50
     assert all(re.match(r"^\d{4}(-\d{2}(-\d{2})?)?$", c.as_of) for c in chunks)
     assert {f.stem for f in (out / "narrative").glob("*.md")} >= {"02_founders_team", "06_market", "09_risks_and_objections"}
@@ -306,4 +308,4 @@ def test_real_sizing_inputs_are_sourced_from_the_public_ledger(built):
     floor = by_id["biobot_sizing_city_price_floor"]
     assert floor.meta["result"] == pytest.approx(870 * 15_000) and "Caveat:" in floor.text
     assert all(c.text.startswith("UNVERIFIED LEAD") for c in chunks if c.doc_type == "public_lead")
-    assert "## Public sources" in (out / "README.md").read_text()
+    assert "## Source-ledger items:" in (out / "README.md").read_text()

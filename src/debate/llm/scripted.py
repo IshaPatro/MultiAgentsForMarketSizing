@@ -36,9 +36,10 @@ def default_responder(role: str, system: str, user: str, schema: type[BaseModel]
         refs = dict.fromkeys(re.findall(r"^(C\d+) ", user, re.M))
         return VerdictBatch(verdicts=[ClaimVerdict(ref=r, verdict="supported", confidence=0.9, evidence_ids=[],
                                                    note="dry-run") for r in refs])
-    point = f"[dry-run {role}] Placeholder argument number {call_no} that stays well under the word limit."
+    point = f"[dry-run {role}] Placeholder argument number {call_no}."
     if schema is VCQuestion:
-        return VCQuestion(point=point, addressed_to=_EXECS[call_no % len(_EXECS)])
+        # Like a real VC, the scripted one says it is ready once every agenda topic is covered.
+        return VCQuestion(point=point, ready_to_decide="Every agenda topic is covered" in user)
     if role == "cfo" and "THREE independent sizing approaches" in user:
         from debate.state import Estimate, Statement
         return Statement(point=f"[dry-run cfo] Three sizing methods give $0.5B to $6.5B; I would defend the top-down one.",
@@ -74,6 +75,7 @@ class ScriptedClient:
         parsed = self.responder(role, system, user, schema, call_no)
         self.calls.append({"role": role, "system": system, "user": user, "tier": tier.model})
         usage = Usage(
+            requests=1,
             input_tokens=(len(system) + len(user)) // 4,
             output_tokens=len(parsed.model_dump_json()) // 4,
         )

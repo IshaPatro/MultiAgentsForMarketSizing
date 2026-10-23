@@ -64,3 +64,5 @@ def test_real_retrieval_stays_above_the_quality_bar():
         conn.close()
     assert res["overall"]["hit_at_k"] >= 0.90, report_markdown(res)
     assert res["by_kind"]["number"]["hit_at_k"] >= 0.95
+    assert res["by_kind"]["scenario_history"]["hit_at_k"] >= 0.90, report_markdown(res)
+    assert res["by_kind"]["scenario_current"]["hit_at_k"] >= 0.90, report_markdown(res)

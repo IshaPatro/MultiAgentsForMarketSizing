@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="CFO portrait">
+  <defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#fff0d0"/><stop offset="1" stop-color="#e9ba71"/></linearGradient><clipPath id="clip"><rect width="96" height="96" rx="22"/></clipPath></defs>
+  <g clip-path="url(#clip)"><rect width="96" height="96" fill="url(#bg)"/><circle cx="80" cy="15" r="21" fill="#fff" opacity=".2"/>
+    <path d="M8 98q3-24 25-30l15 8 15-8q22 6 25 30" fill="#324655"/><path d="M35 68l13 15 13-15-13-4" fill="#f8f5ed"/><path d="M46 76h4l3 20H43z" fill="#b7833d"/>
+    <path d="M40 61v11q8 8 16 0V61" fill="#c18d65"/><ellipse cx="48" cy="42" rx="20" ry="23" fill="#deb187"/>
+    <path d="M28 38q0-19 20-21 19 0 20 21l-5-11q-13 4-23-2-5 8-12 13z" fill="#555762"/><path d="M29 34q-5 14 1 26" stroke="#77757a" stroke-width="6" fill="none"/>
+    <circle cx="40" cy="43" r="7" fill="none" stroke="#4b5860" stroke-width="2.5"/><circle cx="57" cy="43" r="7" fill="none" stroke="#4b5860" stroke-width="2.5"/><path d="M47 43h3m-17 0h-4m35 0h4" stroke="#4b5860" stroke-width="2.5"/>
+    <path d="M37 54q0 12 11 13 11-1 11-13-5 5-11 3-6 2-11-3z" fill="#767277"/><path d="M43 59q5 3 10 0" stroke="#fff0e1" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <circle cx="78" cy="77" r="12" fill="#fff"/><path d="M71 82h4v-6h-4zm6 0h4V70h-4zm6 0h4v-9h-4z" fill="#c28a30"/>
+  </g>
+</svg>

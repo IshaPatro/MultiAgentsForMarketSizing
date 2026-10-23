@@ -19,13 +19,13 @@ def test_the_decision_can_only_cite_supported_claims_with_evidence(cfg):
                                                        evidence_ids=["c1"], note="ok") for r in refs])
         if schema is VCDecision:
             d = default_responder(role, system, user, schema, n)
-            d.cited_claim_ids = ["t-t2-c1", "invented-id"]
-            d.score_drivers.market.claim_ids = ["invented-id", "t-t2-c1"]
+            d.cited_claim_ids = ["t-t3-c1", "invented-id"]
+            d.score_drivers.market.claim_ids = ["invented-id", "t-t3-c1"]
             return d
         return default_responder(role, system, user, schema, n)
 
     state, _, _ = make_run(cfg, responder, rounds=1, retriever=FakeRetriever([chunk("c1")]))
     decision = state["decision"]
-    assert decision["cited_claim_ids"] == ["t-t2-c1"]
-    assert decision["score_drivers"]["market"]["claim_ids"] == ["t-t2-c1"]
+    assert decision["cited_claim_ids"] == ["t-t3-c1"]
+    assert decision["score_drivers"]["market"]["claim_ids"] == ["t-t3-c1"]
     assert "era" not in decision

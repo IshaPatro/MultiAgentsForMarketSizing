@@ -3,7 +3,8 @@
 # A question is a hit at k if any expected id is in the top k, or a top-k chunk contains every phrase
 # (so the narrative paragraph that answers it also counts).
 # `kind` groups the scores: number (a figure), fact, exhibit (table lookup), source (provenance), assumption,
-# public (the dated public-source ledger).
+# public (the dated public-source ledger), scenario_history and scenario_current
+# (invented boardroom operating data; expected ids must be synthetic_source chunks).
 company_id: biobot
 questions:
   # ---- figures an agent will cite in a market-size debate
@@ -61,3 +62,30 @@ questions:
   - {kind: public, q: "When did the Massachusetts MWRA stop testing with Biobot?", expect: [biobot_public_contracts_customers_and_06, biobot_public_public_measurements_and_03], contains: ["MWRA"]}
   - {kind: public, q: "Which companies compete with Biobot in national wastewater surveillance today?", expect: [biobot_public_competitors_alternatives_and_01, biobot_public_competitors_alternatives_and_02, biobot_public_competitors_alternatives_and_03, biobot_public_competitors_alternatives_and_04, biobot_public_competitors_alternatives_and_05, biobot_public_competitors_alternatives_and_06]}
   - {kind: public, q: "Does Biobot hold an issued patent on its sampling hardware?", expect: [biobot_public_technology_and_intellectual_03], contains: ["US11714030B2"]}
+  # ---- synthetic boardroom history: the year in the question must lead to the right period
+  - {kind: scenario_history, q: "In the boardroom scenario, what were recognized revenue and gross margin in FY2018?", expect: [biobot_dummy_historical_operating_trajectory_02]}
+  - {kind: scenario_history, q: "How many paying programs and contracted sites did the synthetic company have at the end of 2021?", expect: [biobot_dummy_historical_operating_trajectory_05]}
+  - {kind: scenario_history, q: "What was the scenario's FY2023 revenue, cost of service, and gross margin?", expect: [biobot_dummy_historical_operating_trajectory_07]}
+  - {kind: scenario_history, q: "What ARR and paying-program count did the invented FY2025 operating history close with?", expect: [biobot_dummy_historical_operating_trajectory_09, biobot_dummy_revenue_and_retention_02]}
+  - {kind: scenario_history, q: "How did the synthetic 2022 paying-program cohort bridge opening customers, churn, and new wins?", expect: [biobot_dummy_historical_contract_cohorts_04]}
+  - {kind: scenario_history, q: "Of contracts due in 2025, how many renewed and what was that cohort's renewal rate?", expect: [biobot_dummy_historical_contract_cohorts_07]}
+  - {kind: scenario_history, q: "What was the simulated variable cost per analyzed sample and municipal sales cycle in 2021?", expect: [biobot_dummy_historical_efficiency_and_01]}
+  - {kind: scenario_history, q: "What was the fictional FY2024 operating loss after sales, research, and corporate expenses?", expect: [biobot_dummy_historical_efficiency_and_03]}
+  # ---- synthetic boardroom snapshot: contracts, retention, costs, procurement, and capacity
+  - {kind: scenario_current, q: "How many active paying public-sector programs are in the September 2026 simulated contract book by buyer type?", expect: [biobot_dummy_commercial_contract_book_01]}
+  - {kind: scenario_current, q: "What is the synthetic 2026 contract-book ARR and how do the buyer groups contribute to it?", expect: [biobot_dummy_commercial_contract_book_04]}
+  - {kind: scenario_current, q: "How much recognized revenue did the boardroom scenario generate in the first three quarters of 2026?", expect: [biobot_dummy_revenue_and_retention_03]}
+  - {kind: scenario_current, q: "How did opening ARR, churn, expansion, and new programs bridge to closing ARR in the simulation?", expect: [biobot_dummy_revenue_and_retention_05]}
+  - {kind: scenario_current, q: "What are gross and net revenue retention for the opening 2026 contract cohort?", expect: [biobot_dummy_revenue_and_retention_06]}
+  - {kind: scenario_current, q: "How concentrated is annual recurring revenue in the four largest fictional programs?", expect: [biobot_dummy_revenue_and_retention_07]}
+  - {kind: scenario_current, q: "What does the standard two-site municipal surveillance contract cost and how many annual samples does it include?", expect: [biobot_dummy_pricing_and_unit_02]}
+  - {kind: scenario_current, q: "What components make up the simulated direct variable cost per wastewater sample?", expect: [biobot_dummy_pricing_and_unit_03]}
+  - {kind: scenario_current, q: "What are the annualized network service cost and gross margin in the 2026 operating scenario?", expect: [biobot_dummy_pricing_and_unit_05]}
+  - {kind: scenario_current, q: "What operating cash burn and runway does the synthetic September 2026 balance sheet imply?", expect: [biobot_dummy_pricing_and_unit_08]}
+  - {kind: scenario_current, q: "Of 40 mature paid pilots in the boardroom data, how many converted to annual contracts?", expect: [biobot_dummy_procurement_and_sales_02]}
+  - {kind: scenario_current, q: "What is the median time from qualified discovery to signed municipal or county contract in the scenario?", expect: [biobot_dummy_procurement_and_sales_03]}
+  - {kind: scenario_current, q: "What fraction of September 2026 scheduled wastewater samples yielded reportable results?", expect: [biobot_dummy_capacity_and_product_01]}
+  - {kind: scenario_current, q: "How long does it take from sample receipt to dashboard publication at the median and 90th percentile?", expect: [biobot_dummy_capacity_and_product_02]}
+  - {kind: scenario_current, q: "How are the 78 full-time employees allocated across lab, software, commercial, and administration?", expect: [biobot_dummy_capacity_and_product_03]}
+  - {kind: scenario_current, q: "How many qualified reachable accounts are in the synthetic buyer list by municipality, county, and state?", expect: [biobot_dummy_market_sizing_scenario_01]}
+  - {kind: scenario_current, q: "What is the unweighted annual contract value of the 54 qualified open opportunities?", expect: [biobot_dummy_market_sizing_scenario_04]}

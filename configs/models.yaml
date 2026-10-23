@@ -1,40 +1,38 @@
-# Tier -> model. System 2 = Claude. System 1 (JEV) arrives in Phase 4.
+# Tier -> model. System 2 = Claude. System 1 = JEV (classification: moderator, fact-check verdicts) + Haiku (claim extraction).
 # Prices are USD per million tokens (cached 2026-10-06 from the Claude API docs).
 tiers:
   debate:                       # CEO / CFO / CTO / Devil's Advocate / VC questions
     model: claude-sonnet-5-5
-    effort: low                 # 60-word replies do not need long deliberation
-    max_tokens: 1024            # headroom for adaptive thinking + the JSON reply
+    effort: low
+    max_tokens: 16000           # API-required ceiling set far above any answer: length is not limited, precision is asked for
   fast:                         # System 1, generative: claim extraction (JEV cannot write text, so this stays on Haiku).
     model: claude-haiku-5-5
     effort: low
-    max_tokens: 4096            # headroom for multi-claim structured verdict batches
+    max_tokens: 16000           # unlimited-length answers yield many claims; a ceiling, not a limit (16000 keeps the SDK non-streaming)
   verdict:                      # System 1, classification: first-pass fact-check verdicts. Switched to JEV (a typed
     model: claude-haiku-5-5     # classifier) when JEV_API_KEY is set; Haiku otherwise.
     effort: low
-    max_tokens: 4096
+    max_tokens: 16000           # many claims per batch once answers are long; a ceiling, not a limit
   route:                        # System 1, classification: which executive answers the VC's question. JEV when
     model: claude-haiku-5-5     # JEV_API_KEY is set; Haiku otherwise; Opus in the all-Opus baseline.
     effort: low
-    max_tokens: 512
+    max_tokens: 4096            # thinking counts against it (always on for Opus 5.5 in the baseline)
   check_hard:                   # escalation target for uncertain / "contradicted" verdicts
     model: claude-sonnet-5-5
     effort: medium
-    max_tokens: 4096
+    max_tokens: 16000           # many claims per batch once answers are long; a ceiling, not a limit
   decision:                     # final VC call
     model: claude-opus-5-5
     effort: high
-    max_tokens: 4096
+    max_tokens: 16000
 prices:
   claude-sonnet-5-5: {input: 2.00, output: 10.00, cache_read: 0.20, cache_write: 2.50}
   claude-opus-5-5:   {input: 4.00, output: 20.00, cache_read: 0.20, cache_write: 5.00}
   # Haiku cache prices follow the standard multipliers (read 0.1x, 5-min write 1.25x input).
   claude-haiku-5-5:  {input: 0.10, output: 0.50, cache_read: 0.01, cache_write: 0.125}
 limits:
-  max_words_per_turn: 60
-  max_rounds: 9                # pitch + 4 agenda topics x (main question + follow-up)
-  max_brevity_retries: 1
-  max_cost_usd_per_run: 3.00   # an all-Opus baseline debate costs about $1.5-2.5
+  max_rounds: 60               # runaway guard only: the VC asks until it is ready to decide (12 topics + follow-ups)
+  max_cost_usd_per_run: 25.00  # spend guard: answers are unlimited in length and the VC has no question budget
   context_turns: 8            # verbatim turns shown to each agent (rolling summary arrives in Phase 4)
   retrieval_k: 4              # chunks shown to each agent per turn
   claim_evidence_k: 5         # chunks retrieved per claim during fact-checking

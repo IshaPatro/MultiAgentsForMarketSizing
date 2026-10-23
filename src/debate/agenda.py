@@ -1,8 +1,10 @@
-"""The VC's agenda: the topics a partner meeting must cover, each asked once and then probed with a follow-up.
+"""The VC's agenda: everything a partner needs to know before deciding, each topic opened and then probed.
 
-Every main question is followed by a forced follow-up to the same executive ("how did you get there?"), so a
-number is never accepted on first answer. Market size comes first and goes to the CFO, who may present up to
-three independent sizing methods, each with its maths.
+There is no question budget: the VC keeps asking until every topic is covered and it says it is ready to decide.
+Every main question gets at least one follow-up ("how did you get there?"), so a number is never accepted on first
+answer, and the VC may keep following up while gaps remain. Market size comes first; the TAM answer may carry up to
+three independent sizing methods, each with its maths. The VC never addresses an executive: the moderator decides
+who answers. `owner` only records who usually knows the answer.
 """
 from __future__ import annotations
 
@@ -13,7 +15,7 @@ from dataclasses import dataclass
 class Topic:
     key: str
     title: str
-    owner: str        # executive the question goes to by default
+    owner: str        # executive who usually knows the answer (documentation and dry runs; the moderator decides)
     ask: str          # what the VC's main question should cover
     answer: str       # extra instruction for the executive answering the main question
     follow_up: str    # what the VC's follow-up must probe
@@ -62,6 +64,49 @@ AGENDA: dict[str, Topic] = {t.key: t for t in (
                     "city says no.",
           corpus_topics=('customers_go_to_market', 'risks_and_objections', 'company_history'),
           evidence_query='cities procurement accelerator pilot mayor government access sales cycle first customers'),
+    Topic("icp_beachhead", "Ideal customer profile and beachhead", "ceo",
+          ask="Ask who exactly the ideal customer is (type of buyer, size, the pain they feel) and which narrow "
+              "beachhead the company wins first, and why that one.",
+          answer="Describe the ideal customer precisely and name the beachhead segment and why it comes first; cite "
+                 "evidence for each.",
+          follow_up="Ask what evidence shows this beachhead buys first, and how many such customers exist.",
+          corpus_topics=('customers_go_to_market', 'market'),
+          evidence_query='ideal customer profile beachhead segment cities public health departments first customers pain'),
+    Topic("competition", "Competition and alternatives", "ceo",
+          ask="Ask who else solves this problem today (companies, labs, in-house programmes) and why a buyer would "
+              "choose this company instead.",
+          answer="Name the competitors and alternatives from the evidence and the concrete reason a buyer picks you.",
+          follow_up="Ask where they lose deals today and to whom.",
+          corpus_topics=('competition_and_precedents', 'customers_go_to_market'),
+          evidence_query='competitors alternatives Verily WastewaterSCAN university labs in-house public health substitute'),
+    Topic("founders_team", "Founders' background and journey", "ceo",
+          ask="Ask about the founders' backgrounds, how they met, how the company started and the key moments of "
+              "the journey so far.",
+          answer="Tell the founding story and each founder's background, with dates from the evidence.",
+          follow_up="Ask what gaps the team has today and who they need to hire next.",
+          corpus_topics=('founders_team', 'origin_research', 'company_history'),
+          evidence_query='founders background MIT Underworlds Matus Ghaeli journey started team hires'),
+    Topic("vision", "Vision and long-term ambition", "ceo",
+          ask="Ask where the company will be in ten years if it works and what the end-state product is.",
+          answer="State the long-term vision concretely and the steps from today's product to it.",
+          follow_up="Ask which step on that path is the riskiest and what proves it is possible.",
+          corpus_topics=('decision_context', 'company_history', 'market'),
+          evidence_query='vision long-term platform health data every city expansion future'),
+    Topic("fundraise", "The raise: amount, terms and investors", "cfo",
+          ask="Ask how much they are raising now, on what terms or valuation, from whom, and how long it lasts.",
+          answer="Give the amount, the instrument and terms if known, current investors and the runway it buys; "
+                 "say plainly what the evidence does not show.",
+          follow_up="Ask how they arrived at that amount and what happens if they raise less.",
+          corpus_topics=('financials', 'company_history'),
+          evidence_query='raising seed series funding amount investors valuation runway grant'),
+    Topic("use_of_funds", "Use of funds and milestones", "cfo",
+          ask="Ask what exactly the raised capital will be spent on and which milestones it must reach before the "
+              "next round.",
+          answer="Break the raise into uses with amounts and the milestones each buys, with the maths in "
+                 "`calculation`.",
+          follow_up="Ask which milestone the next investor will judge them on and how likely it is to be hit.",
+          corpus_topics=('financials', 'customers_go_to_market'),
+          evidence_query='use of funds hiring lab sampling sales milestones spend budget next round'),
     Topic("risks", "Key risks", "ceo",
           ask="Ask for the single biggest risk to the business (access, privacy, regulation, team or funding).",
           answer="Name the biggest risk plainly and the concrete mitigation.",

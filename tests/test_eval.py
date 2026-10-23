@@ -23,7 +23,7 @@ def test_sql_dashboard_checks_claim_citations_against_retrievals():
     _run(store)
     report = build_dashboard(store, version="v1")
     assert "100.0% (1/1)" in report
-    assert "Over-limit turns | 0 | 0 | PASS" in report
+    assert "Over-limit turns" not in report      # answers are not length-limited any more
     # A citation that was never retrieved for that turn no longer counts as grounded.
     store.conn.execute("UPDATE claims SET evidence_ids='[\"not-retrieved\"]'")
     assert "0.0% (0/1)" in build_dashboard(store, version="v1")

@@ -60,7 +60,9 @@ class _Sources:
             for p in m.public_sources:   # leads first: their prefix is longer than the ledger's
                 self.sources += [(f"{company_id}_{p.id}_{public_slug(sec)}_", f"Unverified lead ({p.title})")
                                  for sec, cfg in p.sections.items() if cfg.reliability == "lead"]
-                self.sources.append((f"{company_id}_{p.id}_", f"{p.title} (public sources, checked {p.checked})"))
+                kind = "synthetic scenario, not actual company data" if any(
+                    cfg.reliability == "synthetic" for cfg in p.sections.values()) else f"public sources, checked {p.checked}"
+                self.sources.append((f"{company_id}_{p.id}_", f"{p.title} ({kind})"))
             self.sources += [(f"{company_id}_{e.id}_", f"Exhibit {e.number} ({case})") for e in m.exhibits]
         except KeyError:
             self.sources = []
@@ -111,7 +113,7 @@ def run_markdown(store: SqliteStore, run_id: str) -> str:
     tokens_in = sum(c["input_tokens"] or 0 for c in calls)
     tokens_out = sum(c["output_tokens"] or 0 for c in calls)
     n_calls = sum(c["n"] for c in calls)
-    s1 = sum(c["n"] for c in calls if c["tier"] in ("fast", "verdict") and c["model"] != "claude-opus-5-5")
+    s1 = sum(c["n"] for c in calls if c["tier"] in ("fast", "verdict", "route") and c["model"] != "claude-opus-5-5")
     out += ["## Summary", "", "| | |", "|---|---|",
             f"| Status | {run['status']} |",
             f"| Decision | {_cell((decision or {}).get('decision', '—'))} |",

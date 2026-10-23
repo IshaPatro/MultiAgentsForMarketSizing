@@ -17,7 +17,7 @@ def test_market_size_comes_first_goes_to_the_cfo_and_every_main_question_gets_a_
     assert len(qs) == 8
     assert [q["follow_up"] for q in qs] == [False, True] * 4                   # main, follow-up, main, ...
     assert qs[0]["topic"] == "market_size"
-    notices = [t for t in state["turns"] if t["speaker"] == "moderator"]       # one per VC question, after the question
+    notices = [t for t in state["turns"] if t["speaker"] == "moderator"][1:]   # one per VC question (skip the pitch)
     assert len(notices) == 8 and notices[0]["addressed_to"] == "cfo"           # market size goes to the CFO
     assert notices[0]["content"] == "This question will be taken up by the CFO."
     for main, follow in zip(notices[::2], notices[1::2]):                      # follow-up probes the same exec+topic
@@ -101,3 +101,32 @@ def test_topic_follow_up_and_estimates_are_stored(cfg, tmp_path):
     assert follow["topic"] == "market_size" and follow["speaker"] == "vc"
     cfo = next(r for r in rows.values() if r["speaker"] == "cfo")
     assert '"Beachhead budgets (top-down)"' in cfo["estimates_json"]       # dry-run CFO gives the 3 slide methods
+
+
+def test_the_vc_asks_until_every_topic_is_covered_and_then_decides_by_itself(cfg):
+    state, llm, _ = make_run(cfg, rounds=60)                                  # 60 is only a runaway guard
+    assert set(state["agenda_covered"]) == set(AGENDA)                        # vision, raise, use of funds, team, ICP...
+    assert state["vc_ready"] is True and state["round"] < 60                  # it stopped because it was ready
+    assert state["turns"][-1]["speaker"] == "vc"                             # its closing remark ends the meeting
+    assert state["decision"]
+    assert all(t["addressed_to"] == "panel" for t in state["turns"] if t["speaker"] == "vc")
+
+
+def test_the_vc_cannot_stop_early_and_its_own_follow_ups_stay_with_the_same_executive(cfg):
+    asked = {"n": 0}
+
+    def responder(role, system, user, schema, n):
+        if role == "vc" and schema is VCQuestion:
+            asked["n"] += 1
+            if "set `follow_up` to true" in user and asked["n"] == 3:        # an extra, VC-chosen follow-up
+                return VCQuestion(point="And the second input?", follow_up=True)
+            return VCQuestion(point="Enough?", ready_to_decide=True)        # wants to stop: refused while topics remain
+        return default_responder(role, system, user, schema, n)
+
+    state, _, _ = make_run(cfg, responder, rounds=6)
+    assert not state.get("vc_ready")                                          # topics remained, so it kept going
+    qs = vc_turns(state)
+    assert [q["follow_up"] for q in qs][:3] == [False, True, True]            # main, forced follow-up, chosen follow-up
+    notices = [t for t in state["turns"] if t["speaker"] == "moderator"][1:]
+    assert notices[1]["addressed_to"] == notices[2]["addressed_to"] == notices[0]["addressed_to"]
+    assert notices[2]["content"].startswith("This follow-up stays with")

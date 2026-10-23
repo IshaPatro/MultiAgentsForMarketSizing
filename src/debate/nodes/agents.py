@@ -7,7 +7,6 @@ from typing import Callable
 from debate.agenda import AGENDA, FOLLOW_UP_ANSWER, OPENING_TOPIC
 from debate.claims import extract_claims
 from debate.config import CompanyConfig, ModelsConfig
-from debate.guards import trim_to_words, word_count
 from debate.numeric import check_calculation
 from debate.llm.client import ModelClient
 from debate.memory.views import MemoryView, vc_memories
@@ -66,9 +65,7 @@ def last_said(state: DebateState) -> dict:
     return next(t for t in reversed(state["turns"]) if t["speaker"] not in NOTICE_SPEAKERS)
 
 
-MAX_ASSUMPTIONS = 3
 MAX_ESTIMATES = 3      # "answer any three": independent sizing methods, each with its own maths
-MAX_SUPPORT_WORDS = 40  # per calculation / assumption; the 60-word limit applies to the point itself
 
 
 def support_lines(t: dict) -> list[str]:
@@ -113,19 +110,18 @@ def checked_text(parsed) -> str:
 
 
 def _tidy_support(parsed) -> None:
-    """Keep the shown maths and assumptions short; empty strings are dropped."""
+    """Drop empty maths/assumption strings and estimates without maths. Nothing is shortened."""
     if hasattr(parsed, "calculation"):
-        parsed.calculation = trim_to_words(parsed.calculation.strip(), MAX_SUPPORT_WORDS) if parsed.calculation.strip() else ""
-        parsed.assumptions = [trim_to_words(a.strip(), MAX_SUPPORT_WORDS)
-                              for a in parsed.assumptions if a.strip()][:MAX_ASSUMPTIONS]
+        parsed.calculation = parsed.calculation.strip()
+        parsed.assumptions = [a.strip() for a in parsed.assumptions if a.strip()]
     if hasattr(parsed, "estimates"):
         kept = []
         for e in parsed.estimates:
             if not e.calculation.strip():
                 continue  # an estimate without maths is just a claim; it belongs in the point
-            e.method = trim_to_words(e.method.strip() or "Estimate", 8)
-            e.calculation = trim_to_words(e.calculation.strip(), MAX_SUPPORT_WORDS)
-            e.assumptions = [trim_to_words(a.strip(), MAX_SUPPORT_WORDS) for a in e.assumptions if a.strip()][:MAX_ASSUMPTIONS]
+            e.method = e.method.strip() or "Estimate"
+            e.calculation = e.calculation.strip()
+            e.assumptions = [a.strip() for a in e.assumptions if a.strip()]
             kept.append(e)
         parsed.estimates = kept[:MAX_ESTIMATES]
 
@@ -160,30 +156,11 @@ def format_evidence(r: Retrieval) -> str:
     return "\n\n".join(f"[{c.chunk_id}] ({label(c)})\n{c.text}" for c in r.chunks)
 
 
-def _generate_short(deps: Deps, role: str, system: str, user: str, schema):
-    """Call the model; if the reply is over the word limit, ask once for a rewrite, then hard-trim."""
-    lim = deps.cfg.limits
-    total, retries = Usage(), 0
-    while True:
-        parsed, usage = deps.call(role, TIER, system, user, schema)
-        total = total + usage
-        n = word_count(parsed.point)
-        if n <= lim.max_words_per_turn or retries >= lim.max_brevity_retries:
-            break
-        retries += 1
-        user = (
-            f"{user}\n\nYour previous reply was {n} words. Rewrite it in at most "
-            f"{lim.max_words_per_turn} words, keeping only the single strongest point."
-        )
-    trimmed = word_count(parsed.point) > lim.max_words_per_turn
-    if trimmed:
-        parsed.point = trim_to_words(parsed.point, lim.max_words_per_turn)
-    return parsed, total, retries, trimmed
-
-
 def _speak(deps: Deps, role: str, system: str, user: str, schema):
-    """Generate a short, structured reply, then split it into claims for the fact-checker."""
-    parsed, usage, retries, trimmed = _generate_short(deps, role, system, user, schema)
+    """Generate a structured reply (length is the agent's call: the prompts ask for precision, no word limit), then
+    split it into claims for the fact-checker."""
+    parsed, usage = deps.call(role, TIER, system, user, schema)
+    retries, trimmed = 0, False
     _tidy_support(parsed)
     claims, claim_usage = extract_claims(deps, checked_text(parsed))
     return parsed, usage + claim_usage, retries, trimmed, claims, claim_usage.cost_usd
@@ -229,7 +206,7 @@ def _record(deps: Deps, state: DebateState, role: str, parsed, usage: Usage, ret
 
 def vc_open_node(deps: Deps):
     def node(state: DebateState) -> dict:
-        system = build_system("vc_opening", company=deps.company, max_words=deps.cfg.limits.max_words_per_turn)
+        system = build_system("vc_opening", company=deps.company)
         retrieval = evidence_for(deps, f"{deps.company.name} business customers market revenue",
                                  deps.cfg.limits.retrieval_k)
         parsed, usage, retries, trimmed, claims, check_cost = _speak(
@@ -237,10 +214,9 @@ def vc_open_node(deps: Deps):
             "Open the meeting.\n\nEVIDENCE:\n" + format_evidence(retrieval) +
             vc_memories(deps.vc_memory, deps.company.company_id, query=deps.company.name),
             VCQuestion)
-        parsed.addressed_to = "ceo"  # the opening asks the CEO for the pitch, whatever the model said
-        return {"turns": [_record(deps, state, "vc_opening", parsed, usage, retries, trimmed, "ceo",
-                                  retrieval=retrieval, claims=claims, check_cost=check_cost)],
-                "next_speaker": "ceo"}
+        # Like every VC question, the pitch request goes to the whole team; the moderator says who takes it.
+        return {"turns": [_record(deps, state, "vc_opening", parsed, usage, retries, trimmed, "panel",
+                                  retrieval=retrieval, claims=claims, check_cost=check_cost)]}
     return node
 
 
@@ -255,36 +231,43 @@ def credibility(claims: list[dict]) -> str:
     return ", ".join(f"{LABEL[s]} {a}/{b}" for s, (a, b) in tally.items())
 
 
-def _vc_plan(state: DebateState, max_rounds: int) -> tuple[str, str | None, str | None, bool]:
-    """What the next VC question must do: (instruction, forced topic, forced executive, is_follow_up)."""
+def _vc_plan(state: DebateState) -> tuple[str, str | None, bool, list[str]]:
+    """What the next VC question may do: (instruction, forced topic, forced follow-up, uncovered topic keys)."""
     pending = state.get("follow_up")
     covered = state.get("agenda_covered") or []
     remaining = [t for t in AGENDA.values() if t.key not in covered]
-    if pending:
+    keys = [t.key for t in remaining]
+    if pending:   # the first follow-up after a main question is not optional
         topic = AGENDA.get(pending["topic"])
-        who = LABEL[pending["exec"]]
         probe = topic.follow_up if topic else "Ask how they reached that answer and which assumption drives it."
-        return (f"FOLLOW-UP to the {who}'s last answer{f' on {topic.title}' if topic else ''}. {probe} "
-                f"Stay on this topic and address it to the {who}.",
-                pending["topic"], pending["exec"], True)
-    if any(t.key == OPENING_TOPIC for t in remaining):
+        return (f"FOLLOW-UP on the last answer{f' about {topic.title}' if topic else ''}. {probe} Stay on this topic.",
+                pending["topic"], True, keys)
+    if OPENING_TOPIC in keys:
         t = AGENDA[OPENING_TOPIC]
-        return f"Next topic: {t.title}. {t.ask}", t.key, t.owner, False
+        return f"Next topic: {t.title}. {t.ask}", t.key, False, keys
+    parts = []
+    current = AGENDA.get((state.get("current") or {}).get("topic") or "")
+    if current:
+        parts.append(f"If the answers on {current.title} still leave a gap you need closed before deciding, ask "
+                     "another follow-up on it and set `follow_up` to true.")
     if remaining:
-        menu = "\n".join(f"- {t.key}: {t.title} ({LABEL[t.owner]}) - {t.ask}" for t in remaining)
-        return ("Open the most important topic not yet covered and set `topic` to its key:\n" + menu,
-                None, None, False)
-    return "Every agenda topic is covered: ask about the biggest uncertainty that is still unresolved.", None, None, False
+        menu = "\n".join(f"- {t.key}: {t.title} - {t.ask}" for t in remaining)
+        parts.append(("Otherwise open" if current else "Open") + " the most important topic not yet covered and set "
+                     "`topic` to its key. Topics still to cover before you can decide:\n" + menu)
+    else:
+        parts.append("Every agenda topic is covered. Ask about anything still unresolved that matters for the "
+                     "decision. If you now have everything you need, set `ready_to_decide` to true and use `point` "
+                     "for a one-sentence closing remark instead of a question.")
+    return "\n\n".join(parts), None, False, keys
 
 
 def vc_question_node(deps: Deps):
     def node(state: DebateState) -> dict:
         lim = deps.cfg.limits
         n = state["round"] + 1
-        instruction, topic, forced_exec, is_follow_up = _vc_plan(state, lim.max_rounds)
-        last = " It is your last question: make it count." if n == lim.max_rounds else ""
+        instruction, topic, is_follow_up, remaining = _vc_plan(state)
         # The plan goes in the user message, not the system prompt, so each role's system prompt stays cacheable.
-        system = build_system("vc", company=deps.company, max_words=lim.max_words_per_turn)
+        system = build_system("vc", company=deps.company)
         facts = ""
         if state.get("fact_note"):
             facts = f"\n\nFACT-CHECK of the last exchange:\n{state['fact_note']}"
@@ -292,20 +275,28 @@ def vc_question_node(deps: Deps):
             if cred:
                 facts += f"\nSupported claims so far: {cred}."
         retrieval = evidence_for(deps, last_said(state)["content"], lim.retrieval_k)
+        covered = list(state.get("agenda_covered") or [])
+        done = ", ".join(AGENDA[k].title for k in covered) or "none yet"
         user = (f"Meeting so far:\n{format_transcript(state['turns'], lim.context_turns)}{facts}"
                 f"{vc_memories(deps.vc_memory, deps.company.company_id, query=last_said(state)['content'])}"
                 f"\n\nEVIDENCE:\n{format_evidence(retrieval)}"
-                f"\n\nThis is question {n} of {lim.max_rounds}.{last}\n{instruction}")
+                f"\n\nThis is your question {n}. Topics covered so far: {done}.\n{instruction}")
         parsed, usage, retries, trimmed, claims, check_cost = _speak(deps, "vc", system, user, VCQuestion)
 
-        covered = list(state.get("agenda_covered") or [])
+        if parsed.ready_to_decide and not remaining and not is_follow_up:
+            # The VC has what it needs: its closing remark is recorded and the graph goes to the decision.
+            return {"turns": [_record(deps, state, "vc", parsed, usage, retries, trimmed, "panel",
+                                      retrieval=retrieval, claims=claims, check_cost=check_cost)],
+                    "vc_ready": True}
+        current = state.get("current") or {}
+        if not is_follow_up and parsed.follow_up and AGENDA.get(current.get("topic") or ""):
+            topic, is_follow_up = current["topic"], True          # the VC chose to keep probing
         if not is_follow_up:
-            remaining = [k for k in AGENDA if k not in covered]
             if topic is None:  # the VC chose; fall back to the next uncovered topic if it picked badly
                 topic = parsed.topic if parsed.topic in remaining else (remaining[0] if remaining else None)
-            if topic:
+            if topic and topic not in covered:
                 covered.append(topic)
-        # Who answers is the router's decision (route_node), which also schedules the follow-up.
+        # Who answers is the moderator's decision (route_node), which also schedules the first follow-up.
         return {"turns": [_record(deps, state, "vc", parsed, usage, retries, trimmed, "panel",
                                   retrieval=retrieval, claims=claims, check_cost=check_cost,
                                   topic=topic or "", follow_up=is_follow_up)],
@@ -318,18 +309,20 @@ def route_node(deps: Deps):
     def node(state: DebateState) -> dict:
         lim = deps.cfg.limits
         q = next(t for t in reversed(state["turns"]) if t["speaker"] == "vc")
-        pending = state.get("follow_up")
-        if q.get("follow_up") and pending:
-            executive, usage, model, tier, reason = pending["exec"], Usage(), "code", "code", "follow-up"
+        probed = state.get("follow_up") or state.get("current")
+        current = state.get("current")
+        if q.get("follow_up") and probed:   # a follow-up stays with whoever gave the answer being probed
+            executive, usage, model, tier, reason = probed["exec"], Usage(), "code", "code", "follow-up"
             upcoming = None
         else:
             agenda = AGENDA.get(q.get("topic") or "")
             asked = (f"Agenda topic: {agenda.title}\n" if agenda else "") + f"Question: {q['content']}"
             parsed, usage = deps.call("route", "route", ROUTE_SYSTEM, asked, RouteChoice)
             executive, model, tier, reason = parsed.executive, deps.cfg.tiers["route"].model, "route", parsed.reason
-            # Every main question earns a follow-up to whoever answers it, if a round is left for it.
+            # Every main question earns a follow-up to whoever answers it (the safety cap permitting).
             upcoming = ({"topic": q["topic"], "exec": executive}
                         if q.get("topic") and state["round"] + 1 < lim.max_rounds else None)
+            current = {"topic": q.get("topic", ""), "exec": executive}
             deps.event("route_decision", {"executive": executive, "model": model, "reason": reason,
                                           "confidence": parsed.confidence, "question_seq": q["seq"]})
         turn = Turn(seq=len(state["turns"]) + 1, round=state["round"] + 1, speaker="moderator", addressed_to=executive,
@@ -337,14 +330,14 @@ def route_node(deps: Deps):
                     prompt_version=prompt_version(), topic=q.get("topic", ""), follow_up=bool(q.get("follow_up")))
         for sink in deps.sinks:
             sink(turn)
-        return {"turns": [turn.model_dump()], "next_speaker": executive, "follow_up": upcoming}
+        return {"turns": [turn.model_dump()], "next_speaker": executive, "follow_up": upcoming, "current": current}
     return node
 
 
 def _argue(deps: Deps, state: DebateState, role: str, task: str, query: str, addressed_to: str,
            topic: str = "", follow_up: bool = False) -> dict:
     lim = deps.cfg.limits
-    system = build_system(role, company=deps.company, max_words=lim.max_words_per_turn)
+    system = build_system(role, company=deps.company)
     agenda = AGENDA.get(topic)
     retrieval = evidence_for(deps, f"{query} {ROLE_HINT[role]}".strip(), lim.retrieval_k,
                              agenda.corpus_topics if agenda else (), agenda.evidence_query if agenda else "")

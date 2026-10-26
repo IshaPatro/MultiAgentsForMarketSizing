@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 
-from debate.numeric import check_arithmetic, check_sentence_math
+from debate.numeric import check_calculation, check_sentence_math
 from debate.nodes.agents import LABEL, Deps, credibility
 from debate.rag.retriever import Retrieval
 from debate.prompts import prompt_version
@@ -94,7 +94,7 @@ def fact_check_node(deps: Deps):
                 records.append(rec)
                 if rec["type"] in VERIFY_TYPES:
                     if rec["type"] == "number":
-                        math = check_arithmetic(c["text"])
+                        math = check_calculation(c["text"])   # whole expressions, not fragments
                         if math is None:
                             math = check_sentence_math(c["text"])
                         if math is False:

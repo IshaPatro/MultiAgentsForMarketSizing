@@ -25,18 +25,23 @@ def _value(text: str) -> Decimal:
     return Decimal(match.group(1).replace(",", "")) * _SCALE.get(unit, 1)
 
 
+_OPERATOR_END = re.compile(r"(?:[+×*/−-]|\bx)\s*$", re.I)
+
+
 def check_arithmetic(text: str) -> bool | None:
-    """Return True/False for a clear equation, or None when there is no safe calculation."""
-    percent = _PERCENT.search(text)
-    if percent:
-        expected = Decimal(percent.group(1)) * _value(percent.group(2)) / 100
-        stated = _value(percent.group(3))
+    """Return True/False for a clear equation, or None when there is no safe calculation.
+
+    A match that is only the tail of a longer expression ("28 x $36,000 + [41 x $96,000 = $4,944,000]") is not an
+    equation of its own, so it is left to check_calculation, which evaluates the whole left-hand side.
+    """
+    match = _PERCENT.search(text) or _TIMES.search(text)
+    if not match or _OPERATOR_END.search(text[:match.start()]):
+        return None
+    if match.re is _PERCENT:
+        expected = Decimal(match.group(1)) * _value(match.group(2)) / 100
     else:
-        times = _TIMES.search(text)
-        if not times:
-            return None
-        expected = _value(times.group(1)) * _value(times.group(2))
-        stated = _value(times.group(3))
+        expected = _value(match.group(1)) * _value(match.group(2))
+    stated = _value(match.group(3))
     return abs(expected - stated) <= max(Decimal("0.005"), abs(expected) * Decimal("0.005"))
 
 
@@ -93,11 +98,55 @@ def _evaluate(expr: str) -> Decimal | None:
     return total
 
 
+_POINTS = re.compile(r"\s*(?:%|pp\b|percentage points?|points?|pts?\b|percent)", re.I)
+
+
+def _has_operator(text: str) -> bool:
+    return any(m.group("op") for m in _TOKEN.finditer(text))
+
+
+def _first_number(text: str) -> tuple[Decimal, str, str] | None:
+    """(signed value, number as written, text after it) of the first number in a result."""
+    clean = text.replace("~", "").replace("≈", "")
+    for m in _TOKEN.finditer(clean):
+        if m.group("num"):
+            value = _amount(m.group("num"))
+            if re.search(r"(?:^|[\s(])[-−]\s*$", clean[:m.start()]):   # "= -$7,000,000", "= −79"
+                value = -value
+            return value, m.group("num"), clean[m.end():]
+    return None
+
+
+def _half_unit(written: str, value: Decimal) -> Decimal:
+    """Half a unit of the last digit written: "2.3" stands for 2.25-2.35, "$22B" for $21.5B-$22.5B."""
+    m = re.search(r"\d+(?:,\d{3})*(?:\.(\d+))?", written)
+    mantissa = Decimal(m.group(0).replace(",", "")) if m else Decimal(0)
+    if not mantissa:
+        return Decimal(0)
+    return abs(value) * Decimal("0.5") * Decimal(10) ** -len(m.group(1) or "") / mantissa
+
+
+def _agrees(expected: Decimal, value: Decimal, written: str, after: str, lhs: str) -> bool:
+    tolerance = max(Decimal("0.005"), abs(expected) * _STEP_TOLERANCE, _half_unit(written, value))
+    if abs(expected - value) <= tolerance:
+        return True
+    # Percentage points: "57.4% - 53.9% = 3.5 points", "$100k / $10.2M = 1.0 percent"
+    if not written.strip().endswith("%") and ("%" in lhs or _POINTS.match(after)):
+        return abs(expected * 100 - value) <= max(Decimal("0.005"), abs(expected * 100) * _STEP_TOLERANCE,
+                                                  _half_unit(written, value))
+    return False
+
+
 def check_calculation(text: str) -> bool | None:
     """Check every 'expression = result' step in an agent's shown calculation.
 
     False if any step is wrong, True if at least one step was checkable and all were right, None if nothing
     could be safely evaluated (the claim then goes through evidence-based fact-checking as usual).
+
+    Each '=' joins two sides. A side is checked only when at least one of them is an arithmetic expression:
+    "a x b = c" (result on the right), "c = a x b" (result first), "a x b + c x d = e + f = g" (chained). Two bare
+    numbers ("$6.1M per year = $508K per month") are a unit conversion, not arithmetic, and are skipped. A result is
+    accepted to the precision it is written in ("about 2.3x" for 2.265) and as percentage points ("= 3.5 points").
     """
     checked = False
     for step in re.split(r"[;\n]|(?<=\d)\.\s", text):
@@ -107,16 +156,29 @@ def check_calculation(text: str) -> bool | None:
                 return False
             checked = checked or single is True
             continue
-        parts = [p for p in step.split("=")]
+        parts = step.split("=")
         for lhs, rhs in zip(parts, parts[1:]):
-            expected = _evaluate(lhs)
-            stated = next((m.group("num") for m in _TOKEN.finditer(rhs.replace("~", "").replace("≈", ""))
-                           if m.group("num")), None)
+            left_expr, right_expr = _has_operator(lhs), _has_operator(rhs)
+            if left_expr:
+                expected = _evaluate(lhs)
+                right = _evaluate(rhs) if right_expr else None
+                if expected is None:
+                    continue
+                if right is not None:                       # chained: both sides are expressions
+                    checked = True
+                    if not _agrees(expected, right, rhs, "", lhs):
+                        return False
+                    continue
+                stated = _first_number(rhs)
+            elif right_expr:                                # result first: "21,264 = 886 x 24"
+                expected, stated = _evaluate(rhs), _first_number(lhs)
+                lhs = rhs
+            else:
+                continue
             if expected is None or stated is None:
                 continue
-            value = _amount(stated)
             checked = True
-            if abs(expected - value) > max(Decimal("0.005"), abs(expected) * _STEP_TOLERANCE):
+            if not _agrees(expected, stated[0], stated[1], stated[2], lhs):
                 return False
     return True if checked else None
 

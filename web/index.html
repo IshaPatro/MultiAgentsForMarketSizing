@@ -3,37 +3,34 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Compare optimized and Opus-only multi-agent investment debates for Biobot Analytics.">
-  <title>NextGen Boardroom · Biobot comparison</title>
+  <meta name="description" content="NextGen Boardroom company cases.">
+  <title>NextGen Boardroom</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <a class="brand" href="index.html"><span class="brand-mark">N</span><span>NextGen <b>Boardroom</b></span></a>
-      <nav aria-label="Main navigation"><a class="active" href="index.html">Overview</a><a href="biobot.html">Conversations</a></nav>
+      <a class="brand" href="index.html" aria-label="NextGen Boardroom home">
+        <span class="brand-mark">N</span>
+        <span>NextGen <b>Boardroom</b></span>
+      </a>
     </div>
   </header>
-  <main class="layout">
-    <section class="hero">
-      <div class="eyebrow">BIOBOT ANALYTICS · MULTI-AGENT DUE DILIGENCE</div>
-      <h1>Same company.<br><span>Two inference paths.</span></h1>
-      <p>The optimized debate routes classification to JEV and generation across Claude Haiku, Sonnet, and Opus. The comparison run sends every model call to Opus. Switch between the conversations and their VC decisions on one company page.</p>
-      <div class="hero-actions"><a class="button primary" href="biobot.html">Compare conversations <span aria-hidden="true">↗</span></a><a class="button secondary" href="biobot.html#naive">View naive approach</a></div>
-    </section>
-    <section class="metrics-grid" aria-label="Measured inference comparison">
-      <div class="metric"><span>Inference cost</span><strong>65%</strong><small>lower with routing</small></div>
-      <div class="metric"><span>Total tokens</span><strong>12%</strong><small>fewer with routing</small></div>
-      <div class="metric"><span>Debate runtime</span><strong>48%</strong><small>shorter with routing</small></div>
-      <div class="metric"><span>Evidence retrieval</span><strong>96%</strong><small>hit@4 across 49 questions</small></div>
-    </section>
-    <section class="section-intro"><div><div class="eyebrow">THE EXPERIMENT</div><h2>Compare the full decision path</h2></div><p>Two nine-round Biobot runs produced 79 versus 84 model calls. Costs, token counts, runtime, and the full saved conversations are published here.</p></section>
-    <section class="path-grid" aria-label="Inference profiles">
-      <article class="path-card optimized"><div class="path-top"><span class="tag">OPTIMIZED</span><span class="path-icon" aria-hidden="true">↗</span></div><h3>Route work by difficulty</h3><p>JEV classifies fact-check verdicts and moderator choices. Haiku extracts claims, Sonnet handles debate and escalations, and Opus makes the final decision.</p><div class="path-stats"><div><span>Measured cost</span><b>$0.5164</b></div><div><span>Tokens</span><b>209,252</b></div><div><span>Wall time</span><b>212s</b></div></div><a href="biobot.html#optimized">Explore optimized run →</a></article>
-      <article class="path-card baseline"><div class="path-top"><span class="tag">NAIVE · OPUS-ONLY BASELINE</span><span class="path-icon" aria-hidden="true">↗</span></div><h3>One model for every call</h3><p>Claude Opus handles moderator routing, claim extraction, fact checks, debate turns, and the final decision without the System One classifier.</p><div class="path-stats"><div><span>Measured cost</span><b>$1.4925</b></div><div><span>Tokens</span><b>237,472</b></div><div><span>Wall time</span><b>411s</b></div></div><a href="biobot.html#naive">Explore baseline run →</a></article>
-    </section>
-    <p class="disclosure">This site publishes the two completed Biobot conversations and their VC decision memos. Licensed case text and generated corpus files are excluded.</p>
+
+  <main class="company-directory">
+    <p class="eyebrow">COMPANY CASES</p>
+    <h1>Investment boardroom</h1>
+
+    <a class="company-list-card" href="biobot.html" aria-label="Open Biobot Analytics boardroom">
+      <span class="company-logo">
+        <img src="assets/biobot.webp" alt="Biobot Analytics logo">
+      </span>
+      <span class="company-list-content">
+        <span class="company-list-name">Biobot Analytics</span>
+        <span class="company-list-detail">Wastewater intelligence for public health</span>
+      </span>
+      <span class="company-list-action">Open boardroom <span aria-hidden="true">→</span></span>
+    </a>
   </main>
-  <footer class="site-footer"><span>NextGen Boardroom · Evidence-first investment analysis</span><a href="https://github.com/IshaPatro/MultiAgentsForMarketSizing">View project source ↗</a></footer>
 </body>
 </html>

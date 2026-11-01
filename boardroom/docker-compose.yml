@@ -1,5 +1,8 @@
 # Postgres + pgvector. Used from Phase 2 (RAG) and Phase 5 (checkpointer/store).
 # Phase 1 runs on SQLite and does not need this.
+# Pinned so moving this file into boardroom/ keeps the same Postgres volume.
+name: multiagentsformarketsizing
+
 services:
   postgres:
     image: pgvector/pgvector:pg16

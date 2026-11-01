@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DB = ROOT / "data" / "debate.sqlite"
-PAGES = (ROOT / "web" / "biobot.html",)
+PAGES = (ROOT.parent / "web" / "biobot.html",)  # the shared website lives beside the sub-projects
 PUBLIC_DEMO = ROOT / "site" / "public_demo.json"
 DATA_TAG = re.compile(r'(<script id="report-data" type="application/json">).*?(</script>)', re.S)
 

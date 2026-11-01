@@ -1,0 +1,462 @@
+{
+  "illustrative": false,
+  "inputs": {
+    "Company_Name": {
+      "value": "Sample SaaS Co. (Illustrative)",
+      "source": "User",
+      "confidence": 1.0,
+      "evidence": "Illustrative placeholder, not actual portfolio data"
+    },
+    "Sector": {
+      "value": "Cybersecurity",
+      "source": "User",
+      "confidence": 1.0,
+      "evidence": ""
+    },
+    "Stage": {
+      "value": "Series B",
+      "source": "User",
+      "confidence": 1.0,
+      "evidence": ""
+    },
+    "Currency": {
+      "value": "USD",
+      "source": "User",
+      "confidence": 1.0,
+      "evidence": ""
+    },
+    "Model_Start_Date": {
+      "value": "2026-01-01",
+      "source": "User",
+      "confidence": 1.0,
+      "evidence": ""
+    },
+    "Last_Round_Post_Money": {
+      "value": 180000000,
+      "source": "User",
+      "confidence": 1.0,
+      "evidence": "From cap table / last financing"
+    },
+    "BCV_Ownership": {
+      "value": 0.09,
+      "source": "User",
+      "confidence": 1.0,
+      "evidence": ""
+    },
+    "Conf_Threshold": {
+      "value": 0.7,
+      "source": "User",
+      "confidence": 1.0,
+      "evidence": "Inputs and calculations below this are flagged on Checks & Flags"
+    },
+    "Check_Tolerance": {
+      "value": 1,
+      "source": "User",
+      "confidence": 1.0,
+      "evidence": ""
+    },
+    "Min_Runway_Months": {
+      "value": 12,
+      "source": "User",
+      "confidence": 1.0,
+      "evidence": ""
+    },
+    "Open_Cash": {
+      "value": 22000000,
+      "source": "Data-derived",
+      "confidence": 0.95,
+      "evidence": "Bank statements, Dec-25"
+    },
+    "Open_AR": {
+      "value": 1450000,
+      "source": "Data-derived",
+      "confidence": 0.85,
+      "evidence": "AR aging export"
+    },
+    "Open_Prepaid": {
+      "value": 300000,
+      "source": "Data-derived",
+      "confidence": 0.8,
+      "evidence": ""
+    },
+    "Open_PPE": {
+      "value": 600000,
+      "source": "Data-derived",
+      "confidence": 0.85,
+      "evidence": ""
+    },
+    "Open_AP": {
+      "value": 450000,
+      "source": "Data-derived",
+      "confidence": 0.85,
+      "evidence": ""
+    },
+    "Open_Accrued": {
+      "value": 410000,
+      "source": "Data-derived",
+      "confidence": 0.75,
+      "evidence": ""
+    },
+    "Open_Deferred_Rev": {
+      "value": 3600000,
+      "source": "Data-derived",
+      "confidence": 0.8,
+      "evidence": ""
+    },
+    "Open_Debt": {
+      "value": 0,
+      "source": "Data-derived",
+      "confidence": 0.95,
+      "evidence": ""
+    },
+    "Open_Paid_In_Capital": {
+      "value": 55000000,
+      "source": "Data-derived",
+      "confidence": 0.95,
+      "evidence": "Cap table"
+    },
+    "Open_Retained_Earnings": {
+      "value": -35110000,
+      "source": "Data-derived",
+      "confidence": 0.9,
+      "evidence": "Plug to trial balance; verified by opening-balance check"
+    },
+    "Open_Customers": {
+      "value": 220,
+      "source": "Data-derived",
+      "confidence": 0.9,
+      "evidence": "CRM export"
+    },
+    "Open_ARR": {
+      "value": 12000000,
+      "source": "Data-derived",
+      "confidence": 0.9,
+      "evidence": "Billing system"
+    },
+    "New_ACV": {
+      "value": 60000,
+      "source": "Data-derived",
+      "confidence": 0.75,
+      "evidence": ""
+    },
+    "Price_Increase_Annual": {
+      "value": 0.03,
+      "source": "Agent default",
+      "confidence": 0.65,
+      "evidence": "No pricing history in data room"
+    },
+    "New_Logos_Y1": {
+      "value": 8,
+      "source": "User",
+      "confidence": 0.8,
+      "evidence": "Mgmt plan"
+    },
+    "New_Logos_Y2": {
+      "value": 11,
+      "source": "User",
+      "confidence": 0.7,
+      "evidence": "Mgmt plan"
+    },
+    "New_Logos_Y3": {
+      "value": 14,
+      "source": "User",
+      "confidence": 0.6,
+      "evidence": "Mgmt plan, aggressive"
+    },
+    "Logo_Churn_Monthly": {
+      "value": 0.008,
+      "source": "Benchmark",
+      "confidence": 0.55,
+      "evidence": "No churn field in raw export; mid-market SaaS benchmark"
+    },
+    "Expansion_Monthly": {
+      "value": 0.015,
+      "source": "Data-derived",
+      "confidence": 0.6,
+      "evidence": "Derived from only 4 months of upsell data"
+    },
+    "Services_Pct_Sub": {
+      "value": 0.06,
+      "source": "Data-derived",
+      "confidence": 0.8,
+      "evidence": ""
+    },
+    "Annual_Prepay_Mix": {
+      "value": 0.6,
+      "source": "Agent default",
+      "confidence": 0.5,
+      "evidence": "Billing terms not in data room"
+    },
+    "Avg_Deferred_Months": {
+      "value": 6,
+      "source": "Agent default",
+      "confidence": 0.7,
+      "evidence": "Assumes renewals spread evenly through the year"
+    },
+    "DSO_Days": {
+      "value": 45,
+      "source": "Data-derived",
+      "confidence": 0.8,
+      "evidence": ""
+    },
+    "DPO_Days": {
+      "value": 30,
+      "source": "Data-derived",
+      "confidence": 0.8,
+      "evidence": ""
+    },
+    "Accrued_Pct_Payroll": {
+      "value": 0.25,
+      "source": "Agent default",
+      "confidence": 0.7,
+      "evidence": ""
+    },
+    "Prepaid_Months": {
+      "value": 0.5,
+      "source": "Agent default",
+      "confidence": 0.7,
+      "evidence": ""
+    },
+    "Hosting_Pct": {
+      "value": 0.09,
+      "source": "Data-derived",
+      "confidence": 0.85,
+      "evidence": "AWS invoices"
+    },
+    "Services_Margin": {
+      "value": 0.2,
+      "source": "Benchmark",
+      "confidence": 0.65,
+      "evidence": ""
+    },
+    "Open_HC_RD": {
+      "value": 45,
+      "source": "Data-derived",
+      "confidence": 0.95,
+      "evidence": "HRIS"
+    },
+    "Open_HC_SM": {
+      "value": 35,
+      "source": "Data-derived",
+      "confidence": 0.95,
+      "evidence": "HRIS"
+    },
+    "Open_HC_GA": {
+      "value": 12,
+      "source": "Data-derived",
+      "confidence": 0.95,
+      "evidence": "HRIS"
+    },
+    "Open_HC_CS": {
+      "value": 14,
+      "source": "Data-derived",
+      "confidence": 0.95,
+      "evidence": "HRIS"
+    },
+    "Hires_RD_Y1": {
+      "value": 1.5,
+      "source": "User",
+      "confidence": 0.8,
+      "evidence": "Mgmt hiring plan"
+    },
+    "Hires_RD_Y2": {
+      "value": 1.5,
+      "source": "User",
+      "confidence": 0.7,
+      "evidence": "Mgmt hiring plan"
+    },
+    "Hires_RD_Y3": {
+      "value": 1.0,
+      "source": "User",
+      "confidence": 0.7,
+      "evidence": "Mgmt hiring plan"
+    },
+    "Hires_SM_Y1": {
+      "value": 1.5,
+      "source": "User",
+      "confidence": 0.8,
+      "evidence": "Mgmt hiring plan"
+    },
+    "Hires_SM_Y2": {
+      "value": 2.0,
+      "source": "User",
+      "confidence": 0.7,
+      "evidence": "Mgmt hiring plan"
+    },
+    "Hires_SM_Y3": {
+      "value": 2.0,
+      "source": "User",
+      "confidence": 0.7,
+      "evidence": "Mgmt hiring plan"
+    },
+    "Hires_GA_Y1": {
+      "value": 0.5,
+      "source": "User",
+      "confidence": 0.8,
+      "evidence": "Mgmt hiring plan"
+    },
+    "Hires_GA_Y2": {
+      "value": 0.5,
+      "source": "User",
+      "confidence": 0.7,
+      "evidence": "Mgmt hiring plan"
+    },
+    "Hires_GA_Y3": {
+      "value": 0.5,
+      "source": "User",
+      "confidence": 0.7,
+      "evidence": "Mgmt hiring plan"
+    },
+    "Hires_CS_Y1": {
+      "value": 0.5,
+      "source": "User",
+      "confidence": 0.8,
+      "evidence": "Mgmt hiring plan"
+    },
+    "Hires_CS_Y2": {
+      "value": 0.75,
+      "source": "User",
+      "confidence": 0.7,
+      "evidence": "Mgmt hiring plan"
+    },
+    "Hires_CS_Y3": {
+      "value": 1.0,
+      "source": "User",
+      "confidence": 0.7,
+      "evidence": "Mgmt hiring plan"
+    },
+    "Cost_FTE_RD": {
+      "value": 210000,
+      "source": "Data-derived",
+      "confidence": 0.85,
+      "evidence": "Payroll register + 22% burden"
+    },
+    "Cost_FTE_SM": {
+      "value": 190000,
+      "source": "Data-derived",
+      "confidence": 0.85,
+      "evidence": "Payroll register + 22% burden"
+    },
+    "Cost_FTE_GA": {
+      "value": 170000,
+      "source": "Data-derived",
+      "confidence": 0.85,
+      "evidence": "Payroll register + 22% burden"
+    },
+    "Cost_FTE_CS": {
+      "value": 120000,
+      "source": "Data-derived",
+      "confidence": 0.85,
+      "evidence": "Payroll register + 22% burden"
+    },
+    "Comp_Inflation": {
+      "value": 0.04,
+      "source": "Benchmark",
+      "confidence": 0.75,
+      "evidence": ""
+    },
+    "Commission_Rate": {
+      "value": 0.1,
+      "source": "Data-derived",
+      "confidence": 0.75,
+      "evidence": "Comp plan"
+    },
+    "Marketing_Programs_Monthly": {
+      "value": 200000,
+      "source": "Data-derived",
+      "confidence": 0.8,
+      "evidence": ""
+    },
+    "Marketing_Growth_Annual": {
+      "value": 0.25,
+      "source": "Agent default",
+      "confidence": 0.6,
+      "evidence": ""
+    },
+    "Software_Per_FTE_Monthly": {
+      "value": 400,
+      "source": "Benchmark",
+      "confidence": 0.75,
+      "evidence": ""
+    },
+    "Rent_Per_FTE_Monthly": {
+      "value": 900,
+      "source": "Data-derived",
+      "confidence": 0.8,
+      "evidence": ""
+    },
+    "Other_GA_Monthly": {
+      "value": 120000,
+      "source": "Data-derived",
+      "confidence": 0.75,
+      "evidence": ""
+    },
+    "Opex_Inflation": {
+      "value": 0.03,
+      "source": "Benchmark",
+      "confidence": 0.75,
+      "evidence": ""
+    },
+    "Capex_Per_New_Hire": {
+      "value": 3500,
+      "source": "Benchmark",
+      "confidence": 0.8,
+      "evidence": ""
+    },
+    "Capex_Maintenance_Monthly": {
+      "value": 15000,
+      "source": "Data-derived",
+      "confidence": 0.75,
+      "evidence": ""
+    },
+    "Depr_Life_Months": {
+      "value": 36,
+      "source": "User",
+      "confidence": 0.9,
+      "evidence": ""
+    },
+    "Equity_Raise_Month": {
+      "value": 18,
+      "source": "User",
+      "confidence": 0.7,
+      "evidence": ""
+    },
+    "Equity_Raise_Amount": {
+      "value": 40000000,
+      "source": "User",
+      "confidence": 0.6,
+      "evidence": "Next round size not yet committed"
+    },
+    "Debt_Draw_Month": {
+      "value": 9,
+      "source": "User",
+      "confidence": 0.8,
+      "evidence": ""
+    },
+    "Debt_Draw_Amount": {
+      "value": 5000000,
+      "source": "User",
+      "confidence": 0.8,
+      "evidence": ""
+    },
+    "Debt_Rate": {
+      "value": 0.11,
+      "source": "Agent default",
+      "confidence": 0.55,
+      "evidence": "Term sheet not provided"
+    },
+    "Interest_Income_Rate": {
+      "value": 0.035,
+      "source": "Benchmark",
+      "confidence": 0.8,
+      "evidence": ""
+    },
+    "Tax_Rate": {
+      "value": 0.21,
+      "source": "Benchmark",
+      "confidence": 0.85,
+      "evidence": ""
+    }
+  },
+  "flags": []
+}

@@ -1,0 +1,4 @@
+pair,basis,date_or_period,rate,use_for
+EURUSD,spot,2026-06-30,1.1,balances at Q2 end
+EURUSD,spot,2026-09-30,1.12,"balances at Q3 end (ARR, cash)"
+EURUSD,average,2026-Q3,1.115,"flows in Q3 (revenue, burn)"

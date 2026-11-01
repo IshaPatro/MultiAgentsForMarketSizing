@@ -1,0 +1,203 @@
+Account ID,Account Name,Status,ARR,Customer Since,Owner
+ACC-1133,Customer 1133,Live,56k,2024-04-21,K. Lee
+ACC-1059,Customer 1059,active,57000,2023-10-14,K. Lee
+ACC-1021,Customer 1021,Active,84k,08/26/2024,M. Shah
+ACC-1010,Customer 1010,Active,"83,000 USD",2023-10-02,K. Lee
+ACC-1013,Customer 1013,Active,73k,2024-05-04,J. Ortiz
+ACC-1045,Customer 1045,Active,44k,03/18/2024,J. Ortiz
+ACC-1118,Customer 1118,Live,"31,000 USD",2023-04-17,M. Shah
+ACC-3002,Former 2,Churned,"$33,363",,K. Lee
+ACC-1100,Customer 1100,active,"$43,000",2021-10-21,M. Shah
+ACC-3010,Former 10,Churned,"$60,240",,K. Lee
+ACC-1008,Customer 1008,Live,"$92,000",2023-11-07,J. Ortiz
+ACC-4002,Prospect 2,Trial,$0,,M. Shah
+ACC-1060,Customer 1060,Live,"$34,000",11/07/2022,J. Ortiz
+ACC-1035,Customer 1035,active,40000,2023-09-26,J. Ortiz
+ACC-1078,Customer 1078,active,"27,000 USD",09/26/2025,M. Shah
+ACC-1123,Customer 1123,Active,29000,01/03/2024,J. Ortiz
+ACC-1116,Customer 1116,Live,"$24,000",2023-02-02,M. Shah
+ACC-1009,Customer 1009,active,78k,04/19/2021,J. Ortiz
+ACC-1167,Customer 1167,Live,78000,2021-08-19,K. Lee
+ACC-1164,Customer 1164,Active,"$92,000",2024-07-15,M. Shah
+ACC-1179,Customer 1179,Active,29000,2024-03-08,K. Lee
+ACC-1041,Customer 1041,Active,93k,2024-09-26,J. Ortiz
+ACC-1055,Customer 1055,Active,40000,2024-02-28,M. Shah
+ACC-1025,Customer 1025,Live,21k,2021-04-28,M. Shah
+ACC-1120,Customer 1120,Active,"$86,000",02/02/2024,M. Shah
+ACC-1169,Customer 1169,Active,28k,2021-08-17,J. Ortiz
+ACC-3000,Former 0,Churned,"$74,156",,K. Lee
+ACC-1039,Customer 1039,Active,29000,09/24/2023,K. Lee
+ACC-1082,Customer 1082,active,"34,000 USD",2025-01-09,K. Lee
+ACC-1031,Customer 1031,active,33000,2022-06-18,M. Shah
+ACC-1131,Customer 1131,Active,25000,2025-08-07,K. Lee
+ACC-1130,Customer 1130,Live,"28,000 USD",2023-02-21,M. Shah
+ACC-1136,Customer 1136,Live,"$37,000",2022-08-16,K. Lee
+ACC-1128,Customer 1128,Active,"$60,000",2022-04-16,K. Lee
+ACC-1092,Customer 1092,Active,"$74,000",2022-02-15,J. Ortiz
+ACC-1125,Customer 1125,active,59k,2021-12-10,M. Shah
+ACC-1043,Customer 1043,Active,45000,2023-01-02,M. Shah
+ACC-3006,Former 6,Churned,"$61,246",,K. Lee
+ACC-1004,Customer 1004,Active,"$21,000",2024-12-07,M. Shah
+ACC-1170,Customer 1170,Active,"25,000 USD",2025-03-07,K. Lee
+ACC-1171,Customer 1171,Active,32000,06/25/2021,K. Lee
+ACC-1002,Customer 1002,Live,"33,000 USD",2023-12-24,K. Lee
+ACC-1053,Customer 1053,Active,67k,2021-12-15,K. Lee
+ACC-3004,Former 4,Churned,"$31,903",,K. Lee
+ACC-1042,Customer 1042,Active,"31,000 USD",11/18/2021,M. Shah
+ACC-1106,Customer 1106,Active,"82,000 USD",2024-10-20,K. Lee
+ACC-1051,Customer 1051,Active,32000,04/17/2023,J. Ortiz
+ACC-1064,Customer 1064,Live,"$32,000",2024-09-07,M. Shah
+ACC-4001,Prospect 1,Trial,$0,,M. Shah
+ACC-1159,Customer 1159,Active,78000,11/13/2025,K. Lee
+ACC-1093,Customer 1093,active,37k,04/20/2022,M. Shah
+ACC-1063,Customer 1063,Live,24000,10/16/2024,K. Lee
+ACC-1088,Customer 1088,Live,"$52,000",2024-04-02,M. Shah
+ACC-1114,Customer 1114,Live,"66,000 USD",05/04/2024,K. Lee
+ACC-1089,Customer 1089,Active,60k,2024-07-03,M. Shah
+ACC-1087,Customer 1087,Active,39000,03/18/2021,J. Ortiz
+ACC-1137,Customer 1137,Live,44k,2025-06-04,M. Shah
+ACC-1163,Customer 1163,Active,27000,2023-09-19,M. Shah
+ACC-1121,Customer 1121,Active,55k,2023-01-20,K. Lee
+ACC-1023,Customer 1023,Active,64000,2021-06-01,J. Ortiz
+ACC-1155,Customer 1155,Active,66000,2024-07-23,J. Ortiz
+ACC-1099,Customer 1099,Live,35000,10/01/2025,K. Lee
+ACC-1047,Customer 1047,active,56000,2022-10-23,M. Shah
+ACC-1028,Customer 1028,active,"$40,000",2023-12-27,M. Shah
+ACC-1157,Customer 1157,Live,25k,2023-09-05,K. Lee
+ACC-1178,Customer 1178,Active,"45,000 USD",2021-02-17,M. Shah
+ACC-1168,Customer 1168,Active,"$30,000",08/25/2023,J. Ortiz
+ACC-1005,Customer 1005,active,71k,2022-08-04,J. Ortiz
+ACC-1052,Customer 1052,Active,"$27,000",2025-03-28,M. Shah
+ACC-3005,Former 5,Churned,"$25,269",,K. Lee
+ACC-1084,Customer 1084,Active,"$28,000",04/07/2021,M. Shah
+ACC-1074,Customer 1074,Live,"73,000 USD",2022-09-18,M. Shah
+ACC-1049,Customer 1049,Active,24k,2024-01-03,K. Lee
+ACC-1070,Customer 1070,Live,"80,000 USD",2024-06-17,K. Lee
+ACC-1102,Customer 1102,Active,"40,000 USD",03/16/2025,M. Shah
+ACC-1032,Customer 1032,Active,"$72,000",2021-11-19,K. Lee
+ACC-1141,Customer 1141,Live,48k,06/07/2021,J. Ortiz
+ACC-1110,Customer 1110,active,"43,000 USD",2025-09-16,J. Ortiz
+ACC-1104,Customer 1104,active,"$37,000",2025-01-28,K. Lee
+ACC-1058,Customer 1058,Active,"46,000 USD",2022-04-08,K. Lee
+ACC-1081,Customer 1081,active,30k,07/03/2023,M. Shah
+ACC-1016,Customer 1016,active,"$77,000",2023-09-21,K. Lee
+ACC-1097,Customer 1097,active,66k,2022-03-26,M. Shah
+ACC-1038,Customer 1038,active,"21,000 USD",2021-07-07,K. Lee
+ACC-1148,Customer 1148,Active,"$68,000",2021-11-10,J. Ortiz
+ACC-1006,Customer 1006,Live,"32,000 USD",05/17/2021,M. Shah
+ACC-1135,Customer 1135,Live,70000,09/11/2021,J. Ortiz
+ACC-1077,Customer 1077,Active,37k,2024-05-12,K. Lee
+ACC-1086,Customer 1086,Active,"38,000 USD",2021-07-09,M. Shah
+ACC-1056,Customer 1056,Live,"$79,000",2024-03-11,J. Ortiz
+ACC-1054,Customer 1054,Live,"72,000 USD",09/02/2024,J. Ortiz
+ACC-1003,Customer 1003,active,56000,03/20/2022,K. Lee
+ACC-1095,Customer 1095,Live,68000,2024-07-09,J. Ortiz
+ACC-1152,Customer 1152,Active,"$88,000",2025-09-27,J. Ortiz
+ACC-3003,Former 3,Churned,"$43,902",,K. Lee
+ACC-1085,Customer 1085,Active,68k,2022-03-10,J. Ortiz
+ACC-1036,Customer 1036,Active,"$73,000",12/20/2022,J. Ortiz
+ACC-1080,Customer 1080,active,"$62,000",2025-10-19,J. Ortiz
+ACC-1162,Customer 1162,Active,"50,000 USD",03/04/2022,J. Ortiz
+ACC-1119,Customer 1119,active,90000,2023-08-21,K. Lee
+ACC-1121,Customer 1121,Active,55k,2023-01-20,K. Lee
+ACC-1066,Customer 1066,Live,"49,000 USD",06/23/2021,J. Ortiz
+ACC-1147,Customer 1147,Active,54000,09/22/2025,J. Ortiz
+ACC-1166,Customer 1166,active,"42,000 USD",2021-04-27,J. Ortiz
+ACC-1176,Customer 1176,Active,"$77,000",2021-12-21,M. Shah
+ACC-1154,Customer 1154,active,"55,000 USD",2022-02-09,M. Shah
+ACC-1153,Customer 1153,Active,30k,04/06/2025,J. Ortiz
+ACC-1160,Customer 1160,active,"$53,000",2023-09-05,K. Lee
+ACC-1027,Customer 1027,Live,74000,11/21/2023,K. Lee
+ACC-1139,Customer 1139,Live,73000,2024-02-05,M. Shah
+ACC-1132,Customer 1132,Active,"$49,000",06/22/2024,M. Shah
+ACC-3001,Former 1,Churned,"$20,214",,K. Lee
+ACC-1156,Customer 1156,Active,"$42,000",12/14/2025,M. Shah
+ACC-1073,Customer 1073,Active,34k,2025-10-22,K. Lee
+ACC-1108,Customer 1108,active,"$92,000",01/19/2025,K. Lee
+ACC-1174,Customer 1174,Active,"33,000 USD",07/11/2023,M. Shah
+ACC-3009,Former 9,Churned,"$35,973",,K. Lee
+ACC-1134,Customer 1134,Active,"39,000 USD",2025-04-09,M. Shah
+ACC-1180,Customer 1180,Active,"$72,000",11/15/2023,J. Ortiz
+ACC-1142,Customer 1142,active,"54,000 USD",2023-08-21,M. Shah
+ACC-1072,Customer 1072,Live,"$64,000",11/12/2022,K. Lee
+ACC-1101,Customer 1101,Active,70k,2024-09-05,M. Shah
+ACC-1096,Customer 1096,Active,"$72,000",01/22/2024,J. Ortiz
+ACC-1117,Customer 1117,active,59k,04/03/2023,K. Lee
+ACC-1109,Customer 1109,active,80k,2025-05-26,J. Ortiz
+ACC-1041,Customer 1041,Active,93k,2024-09-26,J. Ortiz
+ACC-1076,Customer 1076,Live,"$79,000",2025-06-26,K. Lee
+ACC-1079,Customer 1079,active,70000,2024-02-11,K. Lee
+ACC-4003,Prospect 3,Trial,$0,,M. Shah
+ACC-1091,Customer 1091,Active,22000,2022-02-02,K. Lee
+ACC-1011,Customer 1011,active,68000,2022-06-27,K. Lee
+ACC-1143,Customer 1143,Active,90000,2023-08-21,M. Shah
+ACC-1146,Customer 1146,Active,"28,000 USD",2021-04-18,J. Ortiz
+ACC-1158,Customer 1158,Live,"76,000 USD",2021-01-02,M. Shah
+ACC-1144,Customer 1144,Active,"$90,000",06/07/2022,K. Lee
+ACC-3007,Former 7,Churned,"$79,631",,K. Lee
+ACC-1138,Customer 1138,Active,"56,000 USD",03/11/2023,K. Lee
+ACC-1030,Customer 1030,Active,"20,000 USD",07/01/2024,J. Ortiz
+ACC-1067,Customer 1067,Live,74000,2024-02-12,K. Lee
+ACC-4004,Prospect 4,Trial,$0,,M. Shah
+ACC-1061,Customer 1061,active,90k,2022-04-19,J. Ortiz
+ACC-1006,Customer 1006,Live,"32,000 USD",05/17/2021,M. Shah
+ACC-4000,Prospect 0,Trial,$0,,M. Shah
+ACC-1024,Customer 1024,Active,"$35,000",02/20/2023,K. Lee
+ACC-1034,Customer 1034,Active,"37,000 USD",2022-07-03,M. Shah
+ACC-1001,Customer 1001,Active,53k,2022-08-18,J. Ortiz
+ACC-1046,Customer 1046,Active,"51,000 USD",2022-11-15,K. Lee
+ACC-1165,Customer 1165,Active,24k,04/14/2021,J. Ortiz
+ACC-1113,Customer 1113,Active,24k,2021-02-19,J. Ortiz
+ACC-1042,Customer 1042,Active,"31,000 USD",11/18/2021,M. Shah
+ACC-1071,Customer 1071,Active,27000,2025-05-06,M. Shah
+ACC-1105,Customer 1105,Live,78k,10/13/2022,K. Lee
+ACC-1094,Customer 1094,Live,"42,000 USD",2022-06-04,K. Lee
+ACC-1044,Customer 1044,Active,"$59,000",2021-09-28,M. Shah
+ACC-1090,Customer 1090,Active,"74,000 USD",05/02/2022,J. Ortiz
+ACC-1069,Customer 1069,Active,80k,08/28/2022,J. Ortiz
+ACC-1150,Customer 1150,active,"23,000 USD",07/03/2021,K. Lee
+ACC-1057,Customer 1057,Live,75k,09/11/2022,M. Shah
+ACC-1014,Customer 1014,Active,"92,000 USD",2024-11-25,M. Shah
+ACC-1062,Customer 1062,Live,"62,000 USD",2025-05-06,K. Lee
+ACC-1083,Customer 1083,Live,64000,2024-03-23,J. Ortiz
+ACC-1029,Customer 1029,Active,25k,2023-10-04,K. Lee
+ACC-1020,Customer 1020,Live,"$65,000",2025-11-02,K. Lee
+ACC-1012,Customer 1012,active,"$68,000",06/20/2023,K. Lee
+ACC-1149,Customer 1149,Active,41k,2025-12-22,K. Lee
+ACC-1048,Customer 1048,Active,"$39,000",04/14/2023,M. Shah
+ACC-1007,Customer 1007,active,48000,2022-10-11,J. Ortiz
+ACC-1173,Customer 1173,Active,82k,2025-08-08,J. Ortiz
+ACC-1112,Customer 1112,Live,"$74,000",2025-07-10,M. Shah
+ACC-1124,Customer 1124,Live,"$58,000",2022-08-20,M. Shah
+ACC-4005,Prospect 5,Trial,$0,,M. Shah
+ACC-1037,Customer 1037,Active,94k,2023-12-14,K. Lee
+ACC-1033,Customer 1033,Active,20k,10/14/2025,M. Shah
+ACC-1122,Customer 1122,Active,"35,000 USD",2024-04-09,K. Lee
+ACC-1151,Customer 1151,Live,94000,2025-12-01,K. Lee
+ACC-1017,Customer 1017,Active,43k,2024-05-05,M. Shah
+ACC-1075,Customer 1075,Active,80000,05/04/2022,J. Ortiz
+ACC-1115,Customer 1115,Live,27000,2023-02-24,M. Shah
+ACC-1145,Customer 1145,Active,66k,2023-12-08,K. Lee
+ACC-1127,Customer 1127,active,74000,2022-09-09,J. Ortiz
+ACC-1172,Customer 1172,active,"$60,000",2021-07-25,J. Ortiz
+ACC-3008,Former 8,Churned,"$40,098",,K. Lee
+ACC-3011,Former 11,Churned,"$33,355",,K. Lee
+ACC-1065,Customer 1065,Active,72k,2025-03-17,J. Ortiz
+ACC-1126,Customer 1126,Active,"47,000 USD",03/21/2022,M. Shah
+ACC-1175,Customer 1175,Active,33000,2025-07-06,K. Lee
+ACC-1129,Customer 1129,Active,78k,01/08/2023,M. Shah
+ACC-1098,Customer 1098,Active,"88,000 USD",2021-08-17,K. Lee
+ACC-1026,Customer 1026,Live,"60,000 USD",2024-05-26,K. Lee
+ACC-1161,Customer 1161,Active,26k,2023-09-05,J. Ortiz
+ACC-1068,Customer 1068,Live,"$37,000",2023-12-23,M. Shah
+ACC-1050,Customer 1050,Active,"26,000 USD",2022-12-26,M. Shah
+ACC-1140,Customer 1140,Active,"$78,000",2023-06-13,K. Lee
+ACC-1015,Customer 1015,Active,35000,12/06/2021,K. Lee
+ACC-1019,Customer 1019,Active,82000,2022-06-25,M. Shah
+ACC-1022,Customer 1022,Active,"86,000 USD",2023-06-08,J. Ortiz
+ACC-1040,Customer 1040,Active,"$90,000",2025-09-01,M. Shah
+ACC-1018,Customer 1018,Active,"39,000 USD",11/27/2023,K. Lee
+ACC-1111,Customer 1111,Live,44000,01/05/2024,J. Ortiz
+ACC-1177,Customer 1177,Active,52k,05/17/2021,K. Lee
+ACC-1107,Customer 1107,Active,74000,2024-04-09,M. Shah
+ACC-1103,Customer 1103,Active,32000,2024-03-23,M. Shah

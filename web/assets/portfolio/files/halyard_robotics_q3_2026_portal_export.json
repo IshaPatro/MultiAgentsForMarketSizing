@@ -1,0 +1,36 @@
+{
+  "export": {
+    "tool": "investor-portal",
+    "generated_at": "2026-10-27T18:04:11Z",
+    "schema": "v2"
+  },
+  "company": "Halyard Robotics",
+  "period": "2026-Q3",
+  "submitted_at": "2026-10-27",
+  "currency": "USD",
+  "units": "thousands",
+  "metrics": {
+    "arr": {
+      "2026-06-30": 3200,
+      "2026-09-30": 3550
+    },
+    "revenue_q3": 850,
+    "gross_margin_pct": 58,
+    "cash": {
+      "2026-06-30": 6000,
+      "2026-09-30": 6140
+    },
+    "headcount": 34,
+    "customers": 21,
+    "nrr_ttm_pct": 106
+  },
+  "financing": [
+    {
+      "date": "2026-08-14",
+      "instrument": "SAFE",
+      "amount": 2000,
+      "note": "Insider-led; cap matches Series A post"
+    }
+  ],
+  "commentary": "Sorry for the delay: our auditors needed an extra week. Two pilots converted to paid fleets in September; a third slipped into Q4."
+}

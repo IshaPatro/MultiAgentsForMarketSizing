@@ -1,0 +1,56 @@
+# House formatting standard for portfolio-company models.
+# The builder applies this spec deterministically and lint_model.py enforces it.
+# Change the look here, never in the generated workbook.
+
+font:
+  name: Arial
+  size: 10
+  title_size: 16
+  subtitle_size: 10
+
+colors:
+  navy: "0B2545"          # title band, timeline header
+  accent: "1F5FAD"        # section headers
+  section_fill: "E3ECF7"
+  input_fill: "F2F7FD"
+  low_conf_fill: "FFF2B3" # yellow: low-confidence input or calculation
+  pass_fill: "DDF2E3"
+  fail_fill: "F9D6D5"
+  alert_fill: "FFE7C2"
+  grid: "C9D3E0"
+  muted: "6B7280"
+  white: "FFFFFF"
+  # Cell-type font colors (banker convention)
+  input_font: "0000FF"    # hardcoded input
+  formula_font: "000000"  # calculation
+  link_font: "008000"     # pure reference to another sheet or a named input
+
+number_formats:
+  currency: '$#,##0;($#,##0);"-"'
+  int: '#,##0;(#,##0);"-"'
+  dec1: '#,##0.0;(#,##0.0);"-"'
+  pct: '0.0%;(0.0%);"-"'
+  conf: '0%'
+  multiple: '0.0"x";(0.0"x");"-"'
+  months: '0.0" mo";(0.0" mo");"-"'
+  date: 'mmm yy'
+  date_long: 'd-mmm-yyyy'
+  text: '@'
+  general: 'General'
+
+layout:
+  label_width: 40
+  unit_width: 9
+  period_width: 13.5
+  first_content_row: 8
+  freeze_at: D8
+  months: 36
+
+rules:
+  # Numeric literals tolerated inside formulas on calc sheets (unit conversions, averaging).
+  allowed_literals: [0, 1, 2, 12, 365]
+  # Only the Inputs sheet may hold hardcoded numbers, plus these agent-written columns.
+  hardcode_exempt:
+    - sheet: "Checks & Flags"
+      header: "Confidence"
+  confidence_threshold_name: Conf_Threshold

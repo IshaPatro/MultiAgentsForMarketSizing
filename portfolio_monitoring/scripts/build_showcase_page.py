@@ -385,7 +385,7 @@ def build(run):
 
     page = TEMPLATE
     for k, v in {
-        "{{RUN}}": e(run.name), "{{IN_TABS}}": "".join(tabs), "{{IN_PANES}}": "".join(panes),
+        "{{IN_TABS}}": "".join(tabs), "{{IN_PANES}}": "".join(panes),
         "{{OUT_TABS}}": otabs, "{{OUT_PANES}}": opanes, "{{SCORE}}": score_html,
         "{{ASKED}}": str(len(asked)), "{{INC}}": str(inc), "{{AGREE}}": f"{agree:.0%}",
         "{{TEMPLATES}}": str(templates), "{{COST}}": f"${cost:.4f}", "{{LAT}}": f"{med_lat:.0f} ms",
@@ -513,7 +513,7 @@ footer{padding:28px 0 48px;color:var(--faint);font-size:13px;border-top:1px soli
 
 <main>
 <div class="wrap hero">
-  <div class="eyebrow">Multi-agent pipeline · Claude + JEV · live run {{RUN}}</div>
+  <div class="eyebrow">Multi-agent pipeline · Claude + JEV</div>
   <h1>Messy founder updates in.<br><em>A checked, review-ready workbook out.</em></h1>
   <p class="lede">Every quarter a VC associate collects PDFs, decks, emails and CSV exports from each portfolio company and rebuilds the same monitoring workbook by hand. These agents do it end to end, then prove the result is right before anyone opens the file. Everything below is from one live run, unedited.</p>
   <div class="stats">

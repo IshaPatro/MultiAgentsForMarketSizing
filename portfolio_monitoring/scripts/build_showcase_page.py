@@ -409,39 +409,20 @@ TEMPLATE = r"""<!doctype html>
 <meta name="robots" content="noindex">
 <title>Portfolio Monitoring Agents</title>
 <meta name="description" content="Raw founder updates in, a validated portfolio monitoring workbook out: inputs, outputs and every check from one live run.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 <style>
-:root{--bg:#F7F8FA;--panel:#FFFFFF;--ink:#111827;--muted:#4B5563;--faint:#6B7280;--line:#E5E7EB;--soft:#F1F4F9;
---accent:#1F5FAD;--accent-soft:#E8F0FB;--red:#C23B3B;--red-soft:#FBE9E9;--amber:#A86A06;--amber-soft:#FDF3DF;
---green:#2F7D58;--green-soft:#E3F3EA;--grey-soft:#EEF0F3;--code:#0F172A;--shadow:0 1px 2px rgba(16,24,40,.06),0 4px 16px rgba(16,24,40,.05)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0D1117;--panel:#151B23;--ink:#E6EAF0;--muted:#A9B3C1;--faint:#8B95A3;
---line:#26303B;--soft:#1B2330;--accent:#6FA3E8;--accent-soft:#1A2A40;--red:#F07C7C;--red-soft:#3A1E21;--amber:#E9B562;--amber-soft:#3A2D16;
---green:#6CC79A;--green-soft:#183326;--grey-soft:#232B36;--code:#0A0E14;--shadow:none}}
-:root[data-theme="dark"]{--bg:#0D1117;--panel:#151B23;--ink:#E6EAF0;--muted:#A9B3C1;--faint:#8B95A3;
---line:#26303B;--soft:#1B2330;--accent:#6FA3E8;--accent-soft:#1A2A40;--red:#F07C7C;--red-soft:#3A1E21;--amber:#E9B562;--amber-soft:#3A2D16;
---green:#6CC79A;--green-soft:#183326;--grey-soft:#232B36;--code:#0A0E14;--shadow:none}
+:root{--bg:#f5f8fb;--panel:#fff;--ink:#142234;--muted:#64748b;--faint:#79879a;--line:#dce5ee;--soft:#f5f8fb;
+--accent:#6454c6;--accent-soft:#eeeafe;--red:#C23B3B;--red-soft:#FBE9E9;--amber:#A86A06;--amber-soft:#FDF3DF;
+--green:#087f81;--green-soft:#e3f6f3;--grey-soft:#eef1f5;--code:#142234;--shadow:0 18px 48px rgba(25,47,78,.07)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 Inter,system-ui,-apple-system,Segoe UI,sans-serif;-webkit-font-smoothing:antialiased}
-a{color:var(--accent)}
-.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
-header.top{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
-header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:56px;gap:16px}
-.brand{font-weight:700;letter-spacing:-.01em}.brand span{color:var(--accent)}
-nav.jump{display:flex;gap:18px;font-size:14px;overflow-x:auto}nav.jump a{color:var(--muted);text-decoration:none;white-space:nowrap}nav.jump a:hover{color:var(--ink)}
-.hero{padding:56px 0 28px}
-.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;color:var(--accent);text-transform:uppercase}
-h1{font-size:clamp(30px,4.4vw,46px);line-height:1.08;letter-spacing:-.025em;margin:10px 0 14px;max-width:880px}
-h1 em{font-style:normal;color:var(--accent)}
-.lede{font-size:17px;color:var(--muted);max-width:760px;margin:0}
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:30px 0 8px}
-.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
-.stat b{display:block;font-size:26px;letter-spacing:-.02em}.stat span{font-size:13px;color:var(--muted)}
-section{padding:40px 0;border-top:1px solid var(--line)}
-section>.wrap>h2{font-size:24px;letter-spacing:-.015em;margin:0 0 6px}
-.sub{color:var(--muted);margin:0 0 22px;max-width:780px}
+body{-webkit-font-smoothing:antialiased}
+main a:not(.btn){color:var(--accent)}
+.wrap{max-width:1230px;margin:0 auto;padding:0 30px}
+section{padding:64px 0 8px}
+section>.wrap>.eyebrow{margin-bottom:0}
+.sub{color:var(--muted);font-size:14px;line-height:1.7;margin:10px 0 24px;max-width:780px}
 .flow{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;counter-reset:s}
-.step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;position:relative}
+.step{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;position:relative;box-shadow:var(--shadow)}
 .step::before{counter-increment:s;content:counter(s);display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:700;margin-bottom:8px}
 .step b{display:block;font-size:14px}.step p{margin:4px 0 0;font-size:13px;color:var(--muted)}
 .step .who{font-size:11px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.05em}
@@ -454,12 +435,12 @@ section>.wrap>h2{font-size:24px;letter-spacing:-.015em;margin:0 0 6px}
 .kind{flex:none;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:3px 6px;border-radius:6px;background:var(--grey-soft);color:var(--muted);min-width:58px;text-align:center}
 .k-pdf{background:var(--red-soft);color:var(--red)}.k-xlsx,.k-csv{background:var(--green-soft);color:var(--green)}
 .k-docx,.k-eml{background:var(--accent-soft);color:var(--accent)}.k-pptx,.k-json{background:var(--amber-soft);color:var(--amber)}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow);min-width:0}
 .pane{display:none}.pane.on{display:block}
 .pane-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px}
 .pane-head p{margin:2px 0 0;color:var(--muted);font-size:14px}
-.btn{flex:none;font-size:13px;font-weight:600;text-decoration:none;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--soft);color:var(--ink)}
-.btn:hover{border-color:var(--accent)}.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn{flex:none;display:inline-block;font-size:12px;font-weight:800;text-decoration:none;padding:10px 15px;border-radius:11px;border:1px solid #d7dceb;background:#fff;color:#4b4b73}
+.btn:hover{text-decoration:none;transform:translateY(-1px)}.btn.primary{background:#2c3159;border-color:#2c3159;color:#fff}
 .tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:8px 0 16px}
 table{border-collapse:collapse;width:100%;font-size:13px}
 th{background:var(--soft);text-align:left;font-weight:600;color:var(--muted);position:sticky;top:0}
@@ -490,7 +471,7 @@ pre.code{background:var(--code);color:#D6DEEB;border-radius:10px;max-height:460p
 .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .two h3,.card h3{font-size:15px;margin:0 0 6px}
 .scores{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px}
-.score{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.score{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow)}
 .score-top{display:flex;justify-content:space-between;gap:8px;font-weight:600;font-size:14px}
 .score-val{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:6px 0 2px}
 .score p{margin:0;font-size:12.5px;color:var(--muted)}
@@ -498,33 +479,37 @@ pre.code{background:var(--code);color:#D6DEEB;border-radius:10px;max-height:460p
 .mini div{background:var(--soft);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--muted)}.mini b{display:block;font-size:18px;color:var(--ink)}
 details{margin-top:8px}summary{cursor:pointer;font-weight:600;font-size:14px;color:var(--accent)}
 ul.how{margin:0;padding-left:18px}ul.how li{margin:4px 0}
-footer{padding:28px 0 48px;color:var(--faint);font-size:13px;border-top:1px solid var(--line)}
-@media (max-width:900px){.stats,.scores,.mini{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr 1fr}
+footer{padding:28px 0 48px;margin-top:56px;color:var(--faint);font-size:13px;border-top:1px solid var(--line)}
+@media (max-width:900px){.scores,.mini{grid-template-columns:1fr 1fr}.flow{grid-template-columns:1fr 1fr}
 .explorer,.two{grid-template-columns:1fr}.file-list{position:static;flex-direction:row;overflow-x:auto;padding-bottom:4px}
-.file-tab{flex:none}.wrap{padding:0 16px}nav.jump{display:none}}
-@media (max-width:520px){.stats,.scores,.mini,.flow{grid-template-columns:1fr}}
+.file-tab{flex:none}.wrap{padding:0 16px}.site-header nav a.jump{display:none}}
+@media (max-width:520px){.scores,.mini,.flow{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap">
-  <div class="brand">Portfolio Monitoring <span>Agents</span></div>
-  <nav class="jump"><a href="#how">How it works</a><a href="#inputs">Inputs</a><a href="#output">Output</a><a href="#late">Late file</a><a href="#accuracy">Accuracy</a></nav>
-</div></header>
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="index.html" aria-label="NextGen Boardroom home">
+      <span class="brand-mark">N</span>
+      <span>NextGen <b>Boardroom</b></span>
+    </a>
+    <nav aria-label="Page sections">
+      <a class="jump" href="#how">How it works</a><a class="jump" href="#inputs">Inputs</a><a class="jump" href="#output">Output</a><a class="jump" href="#late">Late file</a><a class="jump" href="#accuracy">Accuracy</a>
+    </nav>
+  </div>
+</header>
 
 <main>
-<div class="wrap hero">
-  <div class="eyebrow">Multi-agent pipeline · Claude + JEV</div>
-  <h1>Messy founder updates in.<br><em>A checked, review-ready workbook out.</em></h1>
-  <p class="lede">Every quarter a VC associate collects PDFs, decks, emails and CSV exports from each portfolio company and rebuilds the same monitoring workbook by hand. These agents do it end to end, then prove the result is right before anyone opens the file. Everything below is from one live run, unedited.</p>
-  <div class="stats">
-    <div class="stat"><b>7 formats</b><span>10 files: PDF, Word, PowerPoint, Excel, CSV, email, JSON</span></div>
-    <div class="stat"><b>{{INC}} errors</b><span>JEV asked {{ASKED}} cell-level questions</span></div>
-    <div class="stat"><b>{{AGREE}}</b><span>JEV agreement with the deterministic oracle</span></div>
-    <div class="stat"><b>{{UPD_PASS}}</b><span>late-file merge checks passed</span></div>
-  </div>
+<div class="wrap">
+  <section class="landing-hero" style="padding:clamp(56px,9vw,104px) 0 0;margin-bottom:0">
+    <div class="eyebrow">Portfolio monitoring · multi-agent pipeline</div>
+    <h1>Messy founder updates in.<br><span>A checked workbook out.</span></h1>
+    <p>Every quarter a VC associate collects PDFs, decks, emails and CSV exports from each portfolio company and rebuilds the same monitoring workbook by hand. These agents do it end to end, then prove the result is right before anyone opens the file. Everything below is from one live run, unedited.</p>
+  </section>
 </div>
 
 <section id="how"><div class="wrap">
+  <div class="eyebrow">Architecture</div>
   <h2>How it works</h2>
   <p class="sub">Five agents, each with one job and a written house standard. Narrow jobs keep behaviour predictable, and every rule in a standard is something a test can check.</p>
   <div class="flow">
@@ -537,6 +522,7 @@ footer{padding:28px 0 48px;color:var(--faint);font-size:13px;border-top:1px soli
 </div></section>
 
 <section id="inputs"><div class="wrap">
+  <div class="eyebrow">Inputs</div>
   <h2>Inputs: what the founders actually sent</h2>
   <p class="sub">Generated from one ground-truth file, so every number has a known right answer, and seeded with the traps associates really hit: contracted ARR in a footnote, burn that is never stated, EUR figures, a restated month, duplicated rows, and an email that tries to instruct the AI.</p>
   <div class="explorer">
@@ -546,6 +532,7 @@ footer{padding:28px 0 48px;color:var(--faint);font-size:13px;border-top:1px soli
 </div></section>
 
 <section id="output"><div class="wrap">
+  <div class="eyebrow">Output</div>
   <h2>Output: the monitoring workbook</h2>
   <p class="sub">Every number outside <b>Inputs &amp; Review</b> is a live Excel formula pointing back to that one page, where each raw figure sits with its source file, location, method and confidence. A reviewer edits one cell and the whole workbook follows. Values below are the recalculated workbook after the late file was merged.</p>
   <div class="card">
@@ -558,6 +545,7 @@ footer{padding:28px 0 48px;color:var(--faint);font-size:13px;border-top:1px soli
 </div></section>
 
 <section id="late"><div class="wrap">
+  <div class="eyebrow">Late file</div>
   <h2>A report that arrives late</h2>
   <p class="sub">Halyard Robotics submitted a week after the deadline, as a portal JSON export in $000s, after the workbook had already been reviewed. The update agent merged it in place: placeholder rows replaced, burn derived from cash while excluding a $2.0M SAFE, the "report missing" flag resolved instead of deleted, and new flags appended with fresh IDs.</p>
   <div class="two">
@@ -569,6 +557,7 @@ footer{padding:28px 0 48px;color:var(--faint);font-size:13px;border-top:1px soli
 </div></section>
 
 <section id="accuracy"><div class="wrap">
+  <div class="eyebrow">Accuracy</div>
   <h2>How I know the numbers and formatting are right</h2>
   <p class="sub">A good-looking spreadsheet with one wrong burn figure is worse than none. The output goes through independent layers of checks, each catching what the others can't.</p>
   <div class="scores">{{SCORE}}</div>
